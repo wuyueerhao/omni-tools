@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, RefreshCw, Hash, FileDown, Check } from 'lucide-react';
+import { Copy, RefreshCw, Hash, FileDown, Check, ShieldCheck } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
+import { AuthService } from '../../services/authService';
+import { CloudSyncService } from '../../services/cloudSyncService';
 
 type PasswordMode = 'random' | 'passphrase' | 'pin';
 
@@ -163,6 +165,21 @@ export const PasswordTool: React.FC = () => {
     toast('已导出密码列表为 TXT', 'success');
   };
 
+  const handleSaveToVault = () => {
+    const user = AuthService.getCurrentUser();
+    if (!user) {
+      toast('登录账号后即可将密码存入加密保险箱并多端同步', 'info');
+      return;
+    }
+    if (!password) return;
+    try {
+      CloudSyncService.savePasswordToVault(password, `密码_${new Date().toLocaleDateString()}`);
+      toast('已存入您的密码保险箱，并自动同步云端', 'success');
+    } catch (e: any) {
+      toast(e.message || '存入失败', 'error');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Main Password Output Panel */}
@@ -221,7 +238,10 @@ export const PasswordTool: React.FC = () => {
             {password}
           </span>
 
-          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary" onClick={handleSaveToVault} title="存入专属密码保险箱（登录后自动多端同步）">
+              <ShieldCheck size={16} color="var(--accent-cyan)" /> 存入保险箱
+            </button>
             <button className="btn btn-gradient" onClick={() => copyText(password)}>
               <Copy size={16} /> 复制
             </button>

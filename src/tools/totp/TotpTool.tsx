@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
-import { Copy, Plus, Trash2, QrCode, RefreshCw, KeyRound, ShieldAlert } from 'lucide-react';
+import { Copy, Plus, Trash2, QrCode, RefreshCw, KeyRound, ShieldAlert, Cloud } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
+import { AuthService } from '../../services/authService';
+import { CloudSyncService } from '../../services/cloudSyncService';
 
 interface SavedAccount {
   id: string;
@@ -109,13 +111,21 @@ export const TotpTool: React.FC = () => {
     const updated = [newAcc, ...accounts];
     setAccounts(updated);
     localStorage.setItem('omni_totp_accounts', JSON.stringify(updated));
-    toast('账号已保存至本地离线存储', 'success');
+    if (AuthService.getCurrentUser()) {
+      CloudSyncService.syncNow().catch(() => {});
+      toast('账号已保存并自动同步至云端', 'success');
+    } else {
+      toast('账号已保存至本地离线存储（登录后可多端同步）', 'success');
+    }
   };
 
   const handleDeleteAccount = (id: string) => {
     const updated = accounts.filter((a) => a.id !== id);
     setAccounts(updated);
     localStorage.setItem('omni_totp_accounts', JSON.stringify(updated));
+    if (AuthService.getCurrentUser()) {
+      CloudSyncService.syncNow().catch(() => {});
+    }
     toast('已删除该账号', 'info');
   };
 
@@ -351,9 +361,15 @@ export const TotpTool: React.FC = () => {
 
         {/* Saved Accounts List */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>本地保管箱 ({accounts.length})</h3>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>纯离线 LocalStorage</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>2FA 保管箱 ({accounts.length})</h3>
+            {AuthService.getCurrentUser() ? (
+              <span className="badge badge-emerald" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Cloud size={12} /> 云端多端已同步
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>本地离线 · 登录后支持多端同步</span>
+            )}
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>

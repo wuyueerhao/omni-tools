@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, RefreshCw, FileSpreadsheet, FileJson, Check } from 'lucide-react';
+import { Copy, RefreshCw, FileSpreadsheet, FileJson, Check, Star } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
 import { TempMailService } from '../../services/tempMailService';
+import { AuthService } from '../../services/authService';
+import { CloudSyncService } from '../../services/cloudSyncService';
 
 export interface LocationDetail {
   city: string;
@@ -586,8 +588,27 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
     };
   };
 
+  const [isSaved, setIsSaved] = useState(false);
+
   const regenerate = () => {
     setIdentity(generateIdentity());
+    setIsSaved(false);
+  };
+
+  const handleSaveToFavorites = () => {
+    const user = AuthService.getCurrentUser();
+    if (!user) {
+      toast('登录账号后即可将身份永久收藏并云端漫游', 'info');
+      return;
+    }
+    if (!identity) return;
+    try {
+      CloudSyncService.saveFavoriteIdentity(identity);
+      setIsSaved(true);
+      toast('已收藏到您的个人专属身份库，并自动同步云端', 'success');
+    } catch (e: any) {
+      toast(e.message || '收藏失败', 'error');
+    }
   };
 
   useEffect(() => {
@@ -787,7 +808,14 @@ ${currentCountry.idLabel}: ${identity.ssn}
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            className={`btn ${isSaved ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={handleSaveToFavorites}
+            title={AuthService.getCurrentUser() ? '收藏该身份至专属云端库' : '登录后解锁身份收藏'}
+          >
+            <Star size={15} color={isSaved ? '#fff' : '#eab308'} /> {isSaved ? '已收藏' : '收藏该身份'}
+          </button>
           <button className="btn btn-secondary" onClick={copyAll}>
             <Copy size={15} /> 复制全部
           </button>
