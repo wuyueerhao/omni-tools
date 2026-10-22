@@ -19,7 +19,7 @@ export interface TempMailConfig {
   customDomain?: string;
 }
 
-const DEFAULT_DOMAINS = ['iubridge.com', 'quickmail.dev', 'cfmail.link', 'tempbox.site'];
+const DEFAULT_DOMAINS = ['vnvnv.com', 'wuyueerhao.com', 'iubridge.com'];
 
 export class TempMailService {
   private static configKey = 'omni_temp_mail_config';
@@ -33,7 +33,7 @@ export class TempMailService {
       // ignore
     }
     return {
-      endpoint: '',
+      endpoint: 'https://email.vnvnv.com',
       customDomain: DEFAULT_DOMAINS[0],
     };
   }
