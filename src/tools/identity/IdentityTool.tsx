@@ -721,8 +721,7 @@ ${currentCountry.idLabel}: ${identity.ssn}
         </div>
         <div style={{ textAlign: 'right' }}>
           <button
-            className="btn-ghost"
-            style={{ padding: '4px 8px', borderRadius: '4px', color: isCopied ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
+            className={`copy-btn ${isCopied ? 'copied' : ''}`}
             onClick={() => copyField(value, label)}
             title="点击复制"
           >

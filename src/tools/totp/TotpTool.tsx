@@ -413,8 +413,7 @@ export const TotpTool: React.FC = () => {
                         {currentCode}
                       </span>
                       <button
-                        className="btn-ghost"
-                        style={{ padding: '4px 6px', borderRadius: '4px' }}
+                        className="copy-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           copyToClipboard(currentCode, `已复制 ${acc.issuer} 口令`);
@@ -424,8 +423,8 @@ export const TotpTool: React.FC = () => {
                         <Copy size={14} />
                       </button>
                       <button
-                        className="btn-ghost"
-                        style={{ padding: '4px 6px', borderRadius: '4px', color: 'var(--accent-rose)' }}
+                        className="copy-btn"
+                        style={{ color: 'var(--accent-rose)' }}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteAccount(acc.id);

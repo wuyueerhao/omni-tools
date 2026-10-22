@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, RefreshCw, Hash, FileDown } from 'lucide-react';
+import { Copy, RefreshCw, Hash, FileDown, Check } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
 
 type PasswordMode = 'random' | 'passphrase' | 'pin';
@@ -30,6 +30,7 @@ export const PasswordTool: React.FC = () => {
   const [batchCount, setBatchCount] = useState<number>(5);
   const [batchList, setBatchList] = useState<string[]>([]);
   const [sha256Hash, setSha256Hash] = useState<string>('');
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   const generateSinglePassword = (): string => {
     if (mode === 'pin') {
@@ -135,6 +136,19 @@ export const PasswordTool: React.FC = () => {
   const copyText = (txt: string, msg = '已复制到剪贴板') => {
     navigator.clipboard.writeText(txt);
     toast(msg, 'success');
+  };
+
+  const copyItem = (p: string, idx: number) => {
+    navigator.clipboard.writeText(p);
+    setCopiedIdx(idx);
+    toast('已复制该条密码', 'success');
+    setTimeout(() => setCopiedIdx(null), 1500);
+  };
+
+  const copyAllBatch = () => {
+    if (batchList.length === 0) return;
+    navigator.clipboard.writeText(batchList.join('\n'));
+    toast(`已复制全部 ${batchList.length} 条密码`, 'success');
   };
 
   const exportBatch = () => {
@@ -425,15 +439,18 @@ export const PasswordTool: React.FC = () => {
 
         {/* Batch Generator */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>批量生成 ({batchList.length})</h3>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={exportBatch}>
-                <FileDown size={14} /> 导出 TXT
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={copyAllBatch} title="复制全部密码">
+                <Copy size={13} /> 复制全部
+              </button>
+              <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={exportBatch} title="导出 TXT">
+                <FileDown size={13} /> 导出
               </button>
               <select
                 className="select-box"
-                style={{ width: '80px', padding: '4px 8px', fontSize: '0.75rem' }}
+                style={{ width: '100px', padding: '4px 6px', fontSize: '0.75rem' }}
                 value={batchCount}
                 onChange={(e) => setBatchCount(Number(e.target.value))}
               >
@@ -441,11 +458,15 @@ export const PasswordTool: React.FC = () => {
                 <option value={10}>10 条</option>
                 <option value={20}>20 条</option>
                 <option value={50}>50 条</option>
+                <option value={100}>100 条</option>
+                <option value={200}>200 条</option>
+                <option value={500}>500 条</option>
+                <option value={1000}>1000 条 (最大)</option>
               </select>
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '380px' }}>
             {batchList.map((p, idx) => (
               <div
                 key={idx}
@@ -462,12 +483,11 @@ export const PasswordTool: React.FC = () => {
               >
                 <span style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}>{p}</span>
                 <button
-                  className="btn-ghost"
-                  style={{ padding: '4px 8px', flexShrink: 0 }}
-                  onClick={() => copyText(p, '已复制该条密码')}
-                  title="复制"
+                  className={`copy-btn ${copiedIdx === idx ? 'copied' : ''}`}
+                  onClick={() => copyItem(p, idx)}
+                  title="复制该条密码"
                 >
-                  <Copy size={14} />
+                  {copiedIdx === idx ? <Check size={14} /> : <Copy size={14} />}
                 </button>
               </div>
             ))}
