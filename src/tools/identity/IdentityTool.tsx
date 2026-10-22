@@ -3,227 +3,404 @@ import { Copy, RefreshCw, FileSpreadsheet, FileJson, Check } from 'lucide-react'
 import { useToast } from '../../components/common/Toast';
 import { TempMailService } from '../../services/tempMailService';
 
-interface RealUSCityLocation {
+export interface LocationDetail {
   city: string;
   county: string;
   zip: string;
   areaCode: string;
-  realStreets: string[];
+  streets: string[];
 }
 
-interface USStateData {
+export interface RegionData {
   code: string;
   name: string;
-  locations: RealUSCityLocation[];
+  locations: LocationDetail[];
 }
 
-const US_STATES_DATABASE: USStateData[] = [
-  {
-    code: 'TX',
-    name: 'Texas',
-    locations: [
-      {
-        city: 'Fort Worth',
-        county: 'Tarrant County',
-        zip: '76107',
-        areaCode: '817',
-        realStreets: ['Moore Avenue', 'Camp Bowie Boulevard', 'Montgomery Street', 'University Drive', 'Bailey Avenue'],
-      },
-      {
-        city: 'Dallas',
-        county: 'Dallas County',
-        zip: '75201',
-        areaCode: '214',
-        realStreets: ['Elm Street', 'Commerce Street', 'Main Street', 'Pacific Avenue', 'Ross Avenue'],
-      },
-      {
-        city: 'Austin',
-        county: 'Travis County',
-        zip: '78701',
-        areaCode: '512',
-        realStreets: ['Congress Avenue', 'Lavaca Street', 'Guadalupe Street', 'Colorado Street', 'Brazos Street'],
-      },
-      {
-        city: 'Houston',
-        county: 'Harris County',
-        zip: '77002',
-        areaCode: '713',
-        realStreets: ['Travis Street', 'Louisiana Street', 'Capitol Street', 'Milam Street', 'Fannin Street'],
-      },
-    ],
-  },
-  {
-    code: 'CA',
-    name: 'California',
-    locations: [
-      {
-        city: 'Los Angeles',
-        county: 'Los Angeles County',
-        zip: '90012',
-        areaCode: '213',
-        realStreets: ['Grand Avenue', 'Spring Street', 'Hope Street', 'Figueroa Street', 'Hill Street'],
-      },
-      {
-        city: 'San Francisco',
-        county: 'San Francisco County',
-        zip: '94102',
-        areaCode: '415',
-        realStreets: ['Market Street', 'Mission Street', 'Geary Street', 'Van Ness Avenue', 'Sutter Street'],
-      },
-      {
-        city: 'San Diego',
-        county: 'San Diego County',
-        zip: '92101',
-        areaCode: '619',
-        realStreets: ['Broadway', 'Ash Street', 'Front Street', 'State Street', 'Union Street'],
-      },
-      {
-        city: 'San Jose',
-        county: 'Santa Clara County',
-        zip: '95113',
-        areaCode: '408',
-        realStreets: ['First Street', 'Market Street', 'Santa Clara Street', 'San Fernando Street'],
-      },
-    ],
-  },
-  {
-    code: 'NY',
-    name: 'New York',
-    locations: [
-      {
-        city: 'New York',
-        county: 'New York County (Manhattan)',
-        zip: '10001',
-        areaCode: '212',
-        realStreets: ['7th Avenue', 'Broadway', '8th Avenue', 'W 34th Street', 'Americas Avenue'],
-      },
-      {
-        city: 'Brooklyn',
-        county: 'Kings County',
-        zip: '11201',
-        areaCode: '718',
-        realStreets: ['Atlantic Avenue', 'Fulton Street', 'Court Street', 'Joralemon Street', 'Adams Street'],
-      },
-      {
-        city: 'Buffalo',
-        county: 'Erie County',
-        zip: '14202',
-        areaCode: '716',
-        realStreets: ['Main Street', 'Delaware Avenue', 'Pearl Street', 'Church Street', 'Franklin Street'],
-      },
-    ],
-  },
-  {
-    code: 'FL',
-    name: 'Florida',
-    locations: [
-      {
-        city: 'Miami',
-        county: 'Miami-Dade County',
-        zip: '33130',
-        areaCode: '305',
-        realStreets: ['Brickell Avenue', 'Biscayne Boulevard', 'SW 8th Street', 'S Miami Avenue', 'Flagler Street'],
-      },
-      {
-        city: 'Orlando',
-        county: 'Orange County',
-        zip: '32801',
-        areaCode: '407',
-        realStreets: ['Orange Avenue', 'Magnolia Avenue', 'Rosalind Avenue', 'Central Boulevard', 'Church Street'],
-      },
-      {
-        city: 'Tampa',
-        county: 'Hillsborough County',
-        zip: '33602',
-        areaCode: '813',
-        realStreets: ['Tampa Street', 'Florida Avenue', 'Franklin Street', 'Ashley Drive', 'Kennedy Boulevard'],
-      },
-    ],
-  },
-  {
-    code: 'WA',
-    name: 'Washington',
-    locations: [
-      {
-        city: 'Seattle',
-        county: 'King County',
-        zip: '98101',
-        areaCode: '206',
-        realStreets: ['Pike Street', 'Pine Street', '4th Avenue', '5th Avenue', 'Stewart Street'],
-      },
-      {
-        city: 'Bellevue',
-        county: 'King County',
-        zip: '98004',
-        areaCode: '425',
-        realStreets: ['Bellevue Way NE', 'NE 8th Street', '106th Avenue NE', 'Main Street'],
-      },
-    ],
-  },
-  {
-    code: 'IL',
-    name: 'Illinois',
-    locations: [
-      {
-        city: 'Chicago',
-        county: 'Cook County',
-        zip: '60601',
-        areaCode: '312',
-        realStreets: ['Michigan Avenue', 'State Street', 'Wacker Drive', 'Dearborn Street', 'Clark Street'],
-      },
-    ],
-  },
-];
+export interface CountryMeta {
+  code: string;
+  name: string;
+  nameEn: string;
+  flag: string;
+  regionLabel: string; // 州 / 郡 / 联邦州 / 都道府县 / 地区
+  regions: RegionData[];
+  currencySymbol: string;
+  idLabel: string; // 社会保障号 / NIN / TFN / 身份证等
+}
 
-// Chinese Mock Database
-const CN_PROVINCES = [
-  { province: '广东省', city: '深圳市', county: '南山区', zip: '518057', prefix: '440305', streets: ['高新南环路', '科技南路', '科苑大道', '深南大道'] },
-  { province: '北京市', city: '北京市', county: '朝阳区', zip: '100020', prefix: '110105', streets: ['建国门外大街', '朝阳北路', '东三环中路', '光华路'] },
-  { province: '上海市', city: '上海市', county: '浦东新区', zip: '200120', prefix: '310115', streets: ['世纪大道', '陆家嘴环路', '张江路', '张衡路'] },
-  { province: '浙江省', city: '杭州市', county: '西湖区', zip: '310013', prefix: '330106', streets: ['文三西路', '天目山路', '文一西路', '教工路'] },
+export const COUNTRIES_DATABASE: CountryMeta[] = [
+  {
+    code: 'US',
+    name: '美国',
+    nameEn: 'United States',
+    flag: '🇺🇸',
+    regionLabel: '州 (State)',
+    currencySymbol: '$',
+    idLabel: '社会保障号 (SSN)',
+    regions: [
+      {
+        code: 'TX',
+        name: 'Texas',
+        locations: [
+          { city: 'Fort Worth', county: 'Tarrant County', zip: '76107', areaCode: '817', streets: ['Moore Avenue', 'Camp Bowie Boulevard', 'University Drive', 'Montgomery Street'] },
+          { city: 'Dallas', county: 'Dallas County', zip: '75201', areaCode: '214', streets: ['Elm Street', 'Commerce Street', 'Main Street', 'Ross Avenue'] },
+          { city: 'Austin', county: 'Travis County', zip: '78701', areaCode: '512', streets: ['Congress Avenue', 'Guadalupe Street', 'Lavaca Street', 'Colorado Street'] },
+          { city: 'Houston', county: 'Harris County', zip: '77002', areaCode: '713', streets: ['Travis Street', 'Capitol Street', 'Louisiana Street', 'Milam Street'] },
+        ],
+      },
+      {
+        code: 'CA',
+        name: 'California',
+        locations: [
+          { city: 'Los Angeles', county: 'Los Angeles County', zip: '90012', areaCode: '213', streets: ['Grand Avenue', 'Spring Street', 'Hope Street', 'Figueroa Street'] },
+          { city: 'San Francisco', county: 'San Francisco County', zip: '94102', areaCode: '415', streets: ['Market Street', 'Mission Street', 'Geary Street', 'Van Ness Avenue'] },
+          { city: 'San Diego', county: 'San Diego County', zip: '92101', areaCode: '619', streets: ['Broadway', 'Ash Street', 'Front Street', 'State Street'] },
+          { city: 'San Jose', county: 'Santa Clara County', zip: '95113', areaCode: '408', streets: ['First Street', 'Market Street', 'Santa Clara Street'] },
+        ],
+      },
+      {
+        code: 'NY',
+        name: 'New York',
+        locations: [
+          { city: 'New York', county: 'New York County (Manhattan)', zip: '10001', areaCode: '212', streets: ['7th Avenue', 'Broadway', '8th Avenue', 'W 34th Street'] },
+          { city: 'Brooklyn', county: 'Kings County', zip: '11201', areaCode: '718', streets: ['Atlantic Avenue', 'Fulton Street', 'Court Street', 'Adams Street'] },
+        ],
+      },
+      {
+        code: 'FL',
+        name: 'Florida',
+        locations: [
+          { city: 'Miami', county: 'Miami-Dade County', zip: '33130', areaCode: '305', streets: ['Brickell Avenue', 'Biscayne Boulevard', 'SW 8th Street', 'S Miami Avenue'] },
+          { city: 'Orlando', county: 'Orange County', zip: '32801', areaCode: '407', streets: ['Orange Avenue', 'Magnolia Avenue', 'Rosalind Avenue'] },
+        ],
+      },
+      {
+        code: 'WA',
+        name: 'Washington',
+        locations: [
+          { city: 'Seattle', county: 'King County', zip: '98101', areaCode: '206', streets: ['Pike Street', 'Pine Street', '4th Avenue', 'Stewart Street'] },
+        ],
+      },
+      {
+        code: 'IL',
+        name: 'Illinois',
+        locations: [
+          { city: 'Chicago', county: 'Cook County', zip: '60601', areaCode: '312', streets: ['Michigan Avenue', 'State Street', 'Wacker Drive', 'Dearborn Street'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'GB',
+    name: '英国',
+    nameEn: 'United Kingdom',
+    flag: '🇬🇧',
+    regionLabel: '地区/郡 (Region/County)',
+    currencySymbol: '£',
+    idLabel: '国民保险号 (NIN)',
+    regions: [
+      {
+        code: 'LDN',
+        name: 'Greater London',
+        locations: [
+          { city: 'London', county: 'Westminster', zip: 'SW1A 1AA', areaCode: '020', streets: ['Oxford Street', 'Baker Street', 'Regent Street', 'Victoria Street'] },
+          { city: 'London', county: 'Camden', zip: 'NW1 2DB', areaCode: '020', streets: ['Camden High Street', 'Chalk Farm Road', 'Euston Road'] },
+        ],
+      },
+      {
+        code: 'MAN',
+        name: 'Greater Manchester',
+        locations: [
+          { city: 'Manchester', county: 'Greater Manchester', zip: 'M1 1AE', areaCode: '0161', streets: ['Deansgate', 'Market Street', 'King Street', 'Portland Street'] },
+        ],
+      },
+      {
+        code: 'BIR',
+        name: 'West Midlands',
+        locations: [
+          { city: 'Birmingham', county: 'West Midlands', zip: 'B1 1BB', areaCode: '0121', streets: ['New Street', 'Colmore Row', 'Broad Street'] },
+        ],
+      },
+      {
+        code: 'EDI',
+        name: 'Scotland',
+        locations: [
+          { city: 'Edinburgh', county: 'City of Edinburgh', zip: 'EH1 1YZ', areaCode: '0131', streets: ['Princes Street', 'Royal Mile', 'George Street'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'DE',
+    name: '德国',
+    nameEn: 'Germany',
+    flag: '🇩🇪',
+    regionLabel: '联邦州 (State)',
+    currencySymbol: '€',
+    idLabel: '德国个人税号 (Steuer-ID)',
+    regions: [
+      {
+        code: 'BER',
+        name: 'Berlin',
+        locations: [
+          { city: 'Berlin', county: 'Mitte', zip: '10115', areaCode: '030', streets: ['Friedrichstraße', 'Unter den Linden', 'Torstraße', 'Chausseestraße'] },
+        ],
+      },
+      {
+        code: 'BAV',
+        name: 'Bavaria',
+        locations: [
+          { city: 'Munich', county: 'Oberbayern', zip: '80331', areaCode: '089', streets: ['Maximilianstraße', 'Leopoldstraße', 'Sendlinger Straße'] },
+        ],
+      },
+      {
+        code: 'HES',
+        name: 'Hesse',
+        locations: [
+          { city: 'Frankfurt', county: 'Darmstadt', zip: '60311', areaCode: '069', streets: ['Zeil', 'Mainzer Landstraße', 'Kaiserstraße'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'AU',
+    name: '澳大利亚',
+    nameEn: 'Australia',
+    flag: '🇦🇺',
+    regionLabel: '州/领地 (State)',
+    currencySymbol: 'A$',
+    idLabel: '税号 (TFN)',
+    regions: [
+      {
+        code: 'NSW',
+        name: 'New South Wales',
+        locations: [
+          { city: 'Sydney', county: 'City of Sydney', zip: '2000', areaCode: '02', streets: ['George Street', 'Pitt Street', 'Castlereagh Street', 'Macquarie Street'] },
+        ],
+      },
+      {
+        code: 'VIC',
+        name: 'Victoria',
+        locations: [
+          { city: 'Melbourne', county: 'City of Melbourne', zip: '3000', areaCode: '03', streets: ['Collins Street', 'Bourke Street', 'Flinders Street', 'Swanston Street'] },
+        ],
+      },
+      {
+        code: 'QLD',
+        name: 'Queensland',
+        locations: [
+          { city: 'Brisbane', county: 'Brisbane City', zip: '4000', areaCode: '07', streets: ['Queen Street', 'Adelaide Street', 'Ann Street'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'FR',
+    name: '法国',
+    nameEn: 'France',
+    flag: '🇫🇷',
+    regionLabel: '大区 (Region)',
+    currencySymbol: '€',
+    idLabel: '社保号 (Numéro Sécurité Sociale)',
+    regions: [
+      {
+        code: 'IDF',
+        name: 'Île-de-France',
+        locations: [
+          { city: 'Paris', county: 'Paris', zip: '75001', areaCode: '01', streets: ['Rue de Rivoli', 'Boulevard Saint-Germain', 'Avenue des Champs-Élysées'] },
+        ],
+      },
+      {
+        code: 'ARA',
+        name: 'Auvergne-Rhône-Alpes',
+        locations: [
+          { city: 'Lyon', county: 'Rhône', zip: '69001', areaCode: '04', streets: ['Rue de la République', 'Place Bellecour', 'Rue Victor Hugo'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'IT',
+    name: '意大利',
+    nameEn: 'Italy',
+    flag: '🇮🇹',
+    regionLabel: '大区 (Region)',
+    currencySymbol: '€',
+    idLabel: '税号 (Codice Fiscale)',
+    regions: [
+      {
+        code: 'LAZ',
+        name: 'Lazio',
+        locations: [
+          { city: 'Rome', county: 'Roma Capitale', zip: '00187', areaCode: '06', streets: ['Via del Corso', 'Via Veneto', 'Via Nazionale'] },
+        ],
+      },
+      {
+        code: 'LOM',
+        name: 'Lombardy',
+        locations: [
+          { city: 'Milan', county: 'Milano', zip: '20121', areaCode: '02', streets: ['Via Montenapoleone', 'Corso Buenos Aires', 'Via Dante'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'ES',
+    name: '西班牙',
+    nameEn: 'Spain',
+    flag: '🇪🇸',
+    regionLabel: '自治区 (Autonomous Community)',
+    currencySymbol: '€',
+    idLabel: '身份号 (DNI/NIE)',
+    regions: [
+      {
+        code: 'MAD',
+        name: 'Community of Madrid',
+        locations: [
+          { city: 'Madrid', county: 'Madrid', zip: '28013', areaCode: '91', streets: ['Gran Vía', 'Calle de Alcalá', 'Paseo de la Castellana'] },
+        ],
+      },
+      {
+        code: 'CAT',
+        name: 'Catalonia',
+        locations: [
+          { city: 'Barcelona', county: 'Barcelona', zip: '08002', areaCode: '93', streets: ['Passeig de Gràcia', 'La Rambla', 'Avinguda Diagonal'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'JP',
+    name: '日本',
+    nameEn: 'Japan',
+    flag: '🇯🇵',
+    regionLabel: '都道府县 (Prefecture)',
+    currencySymbol: '¥',
+    idLabel: '个人番号 (My Number)',
+    regions: [
+      {
+        code: 'TYO',
+        name: '东京都 (Tokyo)',
+        locations: [
+          { city: '千代田区', county: '东京都', zip: '100-0001', areaCode: '03', streets: ['大手町1丁目', '丸之内2丁目', '霞关3丁目'] },
+          { city: '中央区', county: '东京都', zip: '104-0061', areaCode: '03', streets: ['银座4丁目', '日本桥室町2丁目'] },
+        ],
+      },
+      {
+        code: 'OSA',
+        name: '大阪府 (Osaka)',
+        locations: [
+          { city: '大阪市北区', county: '大阪府', zip: '530-0001', areaCode: '06', streets: ['梅田1丁目', '中之岛3丁目', '堂岛1丁目'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'HK',
+    name: '香港',
+    nameEn: 'Hong Kong',
+    flag: '🇭🇰',
+    regionLabel: '地区 (District)',
+    currencySymbol: 'HK$',
+    idLabel: '香港身份证 (HKID)',
+    regions: [
+      {
+        code: 'CW',
+        name: '中西区 (Central & Western)',
+        locations: [
+          { city: '中环 (Central)', county: '香港岛', zip: '999077', areaCode: '852', streets: ['皇后大道中 Queen\'s Road Central', '德辅道中 Des Voeux Road', '康乐广场 Connaught Place'] },
+        ],
+      },
+      {
+        code: 'WC',
+        name: '湾仔区 (Wan Chai)',
+        locations: [
+          { city: '铜锣湾 (Causeway Bay)', county: '香港岛', zip: '999077', areaCode: '852', streets: ['轩尼诗道 Hennessy Road', '告士打道 Gloucester Road', '波斯富街 Percival Street'] },
+        ],
+      },
+      {
+        code: 'YTM',
+        name: '油尖旺区 (Yau Tsim Mong)',
+        locations: [
+          { city: '尖沙咀 (Tsim Sha Tsui)', county: '九龙', zip: '999077', areaCode: '852', streets: ['弥敦道 Nathan Road', '广东道 Canton Road', '梳士巴利道 Salisbury Road'] },
+        ],
+      },
+    ],
+  },
+  {
+    code: 'SG',
+    name: '新加坡',
+    nameEn: 'Singapore',
+    flag: '🇸🇬',
+    regionLabel: '市镇/区域 (District)',
+    currencySymbol: 'S$',
+    idLabel: '身份证 (NRIC/FIN)',
+    regions: [
+      {
+        code: 'CR',
+        name: 'Central Region (市中心)',
+        locations: [
+          { city: 'Singapore', county: 'Downtown Core', zip: '018956', areaCode: '65', streets: ['Marina Boulevard', 'Raffles Quay', 'Shenton Way', 'Collyer Quay'] },
+        ],
+      },
+      {
+        code: 'OR',
+        name: 'Orchard (乌节路)',
+        locations: [
+          { city: 'Singapore', county: 'Orchard Planning Area', zip: '238864', areaCode: '65', streets: ['Orchard Road', 'Scotts Road', 'Paterson Road'] },
+        ],
+      },
+      {
+        code: 'JE',
+        name: 'Jurong East (裕廊东)',
+        locations: [
+          { city: 'Singapore', county: 'West Region', zip: '609731', areaCode: '65', streets: ['Jurong Gateway Road', 'Boon Lay Way', 'Toh Guan Road'] },
+        ],
+      },
+    ],
+  },
 ];
 
 export interface DetailedIdentity {
   id: string;
-  country: 'US' | 'CN';
+  countryCode: string;
+  countryName: string;
   // 基本资料
   fullName: string;
-  gender: 'Male' | 'Female' | '男' | '女';
-  birthDate: string; // 1/27/1975
-  title: string; // Mr. / Ms.
-  hairColor: string; // Brown, Black, Blonde
+  gender: string;
+  birthDate: string;
+  title: string;
+  hairColor: string;
 
   // 地址
-  street: string; // 160 Moore Avenue
-  county: string; // Tarrant County
-  city: string; // Fort Worth
-  state: string; // TX
-  stateName: string; // Texas
-  zipCode: string; // 76107
-  phone: string; // 817-733-2396
+  street: string;
+  county: string;
+  city: string;
+  state: string;
+  stateName: string;
+  zipCode: string;
+  phone: string;
   tempEmail: string;
 
   // 就业 & 信用卡
-  cardType: string; // MasterCard / Visa / American Express
-  cardNumber: string; // 5409...
-  cvv2: string; // 881
-  expireDate: string; // 09/2028
-  occupation: string; // Logging Equipment Operator, Informatics Nurse Specialist
-  companyName: string; // Omni Tech
-  companySize: string; // 19-50 employees
-  employmentStatus: string; // Part-time work / Full-time work
-  monthlySalary: string; // $5,700
-  ssn: string; // 858-44-6370
-  idCardCn?: string; // 身份证号码
+  cardType: string;
+  cardNumber: string;
+  cvv2: string;
+  expireDate: string;
+  occupation: string;
+  companyName: string;
+  companySize: string;
+  employmentStatus: string;
+  monthlySalary: string;
+  ssn: string;
 }
 
-// Luhn Algorithm generator for valid test card numbers
-function generateLuhnCardNumber(prefix: string, length: number): string {
+// Luhn Card Generator
+function generateLuhnCard(prefix: string, length = 16): string {
   let card = prefix;
   while (card.length < length - 1) {
     card += Math.floor(Math.random() * 10);
   }
-  // calculate checksum
   let sum = 0;
   let doubleUp = true;
   for (let i = card.length - 1; i >= 0; i--) {
@@ -245,14 +422,22 @@ interface IdentityToolProps {
 
 export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail }) => {
   const { toast } = useToast();
-  const [targetCountry, setTargetCountry] = useState<'US' | 'CN'>('US'); // 默认美国
-  const [selectedStateCode, setSelectedStateCode] = useState<string>('ALL'); // 默认全美
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>('US'); // 默认美国
+  const [selectedRegionCode, setSelectedRegionCode] = useState<string>('ALL'); // 默认全选
   const [identity, setIdentity] = useState<DetailedIdentity | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const FIRST_NAMES_M = ['James', 'Robert', 'John', 'Michael', 'David', 'William', 'Richard', 'Joseph', 'Thomas', 'Charles', 'Christopher', 'Daniel'];
-  const FIRST_NAMES_F = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen', 'Nancy', 'Lisa'];
-  const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Moore', 'Wilson'];
+  const currentCountry = COUNTRIES_DATABASE.find((c) => c.code === selectedCountryCode) || COUNTRIES_DATABASE[0];
+
+  // When country changes, reset region to ALL
+  const handleCountryChange = (code: string) => {
+    setSelectedCountryCode(code);
+    setSelectedRegionCode('ALL');
+  };
+
+  const FIRST_NAMES_M = ['James', 'Robert', 'John', 'Michael', 'David', 'William', 'Richard', 'Joseph', 'Thomas', 'Charles', 'Daniel', 'Liam', 'Lucas', 'Noah'];
+  const FIRST_NAMES_F = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen', 'Emma', 'Olivia', 'Sophia'];
+  const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Taylor', 'Anderson', 'Wilson'];
   const HAIR_COLORS = ['Brown', 'Black', 'Blonde', 'Auburn', 'Chestnut', 'Gray'];
   const OCCUPATIONS = [
     'Logging Equipment Operator, Informatics Nurse Specialist',
@@ -267,162 +452,145 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
   const COMPANY_SIZES = ['1-10 employees', '19-50 employees', '51-200 employees', '201-500 employees', '500+ employees'];
   const EMPLOYMENT_STATUSES = ['Full-time work', 'Part-time work', 'Contract', 'Self-employed'];
 
-  const generateSingleIdentity = (): DetailedIdentity => {
-    if (targetCountry === 'US') {
-      let stateData: USStateData;
-      if (selectedStateCode !== 'ALL') {
-        stateData = US_STATES_DATABASE.find((s) => s.code === selectedStateCode) || US_STATES_DATABASE[0];
-      } else {
-        stateData = US_STATES_DATABASE[Math.floor(Math.random() * US_STATES_DATABASE.length)];
-      }
+  const generateIdentity = (): DetailedIdentity => {
+    const isMale = Math.random() > 0.5;
+    let region: RegionData;
+    if (selectedRegionCode !== 'ALL') {
+      region = currentCountry.regions.find((r) => r.code === selectedRegionCode) || currentCountry.regions[0];
+    } else {
+      region = currentCountry.regions[Math.floor(Math.random() * currentCountry.regions.length)];
+    }
 
-      const loc = stateData.locations[Math.floor(Math.random() * stateData.locations.length)];
-      const isMale = Math.random() > 0.5;
-      const firstName = isMale
-        ? FIRST_NAMES_M[Math.floor(Math.random() * FIRST_NAMES_M.length)]
-        : FIRST_NAMES_F[Math.floor(Math.random() * FIRST_NAMES_F.length)];
-      const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
-      const fullName = `${firstName} ${lastName}`;
+    const loc = region.locations[Math.floor(Math.random() * region.locations.length)];
+    const streetName = loc.streets[Math.floor(Math.random() * loc.streets.length)];
+    const streetNum = Math.floor(Math.random() * 800) + 10;
+    const street = `${streetNum} ${streetName}`;
 
-      // Birthdate: e.g. 1/27/1975
-      const birthYear = Math.floor(Math.random() * 35) + 1968;
-      const birthMonth = Math.floor(Math.random() * 12) + 1;
-      const birthDay = Math.floor(Math.random() * 28) + 1;
-      const birthDate = `${birthMonth}/${birthDay}/${birthYear}`;
+    // Name
+    let fullName = '';
+    let title = isMale ? 'Mr.' : 'Ms.';
 
-      // Real street address
-      const streetNum = Math.floor(Math.random() * 800) + 10;
-      const streetName = loc.realStreets[Math.floor(Math.random() * loc.realStreets.length)];
-      const street = `${streetNum} ${streetName}`;
+    if (currentCountry.code === 'JP') {
+      const jpSurnames = ['佐藤', '铃木', '高桥', '田中', '伊藤', '渡边', '山本', '中村'];
+      const jpM = ['翔太', '拓也', '健太', '大树', '莲', '悠斗'];
+      const jpF = ['美咲', '葵', '阳菜', '樱', '结衣', '七海'];
+      const sur = jpSurnames[Math.floor(Math.random() * jpSurnames.length)];
+      const giv = isMale ? jpM[Math.floor(Math.random() * jpM.length)] : jpF[Math.floor(Math.random() * jpF.length)];
+      fullName = `${sur} ${giv}`;
+      title = isMale ? 'Mr.' : 'Ms.';
+    } else if (currentCountry.code === 'HK') {
+      const hkSurnames = ['Chan', 'Lee', 'Wong', 'Cheung', 'Lau', 'Lam', 'Ng'];
+      const hkGiv = isMale ? ['Ka-Ho', 'Chun-Kit', 'Kin-Hang', 'Wing-Chun'] : ['Wing-Yan', 'Tsz-Ching', 'Ka-Yan', 'Hoi-Ting'];
+      fullName = `${hkSurnames[Math.floor(Math.random() * hkSurnames.length)]} ${hkGiv[Math.floor(Math.random() * hkGiv.length)]}`;
+    } else {
+      const fName = isMale ? FIRST_NAMES_M[Math.floor(Math.random() * FIRST_NAMES_M.length)] : FIRST_NAMES_F[Math.floor(Math.random() * FIRST_NAMES_F.length)];
+      const lName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+      fullName = `${fName} ${lName}`;
+    }
 
-      // Phone: Real Area Code format: e.g. 817-733-2396
-      const p1 = Math.floor(Math.random() * 800 + 200);
-      const p2 = Math.floor(Math.random() * 9000 + 1000);
-      const phone = `${loc.areaCode}-${p1}-${p2}`;
+    // Birthdate (e.g. 1/27/1975)
+    const birthYear = Math.floor(Math.random() * 35) + 1968;
+    const birthMonth = Math.floor(Math.random() * 12) + 1;
+    const birthDay = Math.floor(Math.random() * 28) + 1;
+    const birthDate = `${birthMonth}/${birthDay}/${birthYear}`;
 
-      // SSN: e.g. 858-44-6370
+    // Phone format
+    let phone = '';
+    if (currentCountry.code === 'US') {
+      phone = `${loc.areaCode}-${Math.floor(Math.random() * 800 + 200)}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    } else if (currentCountry.code === 'GB') {
+      phone = `${loc.areaCode} ${Math.floor(Math.random() * 800 + 100)} ${Math.floor(Math.random() * 9000 + 1000)}`;
+    } else if (currentCountry.code === 'HK') {
+      phone = `+852 ${Math.floor(Math.random() * 70000000 + 20000000)}`;
+    } else if (currentCountry.code === 'SG') {
+      phone = `+65 ${Math.floor(Math.random() * 30000000 + 60000000)}`;
+    } else if (currentCountry.code === 'JP') {
+      phone = `${loc.areaCode}-${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    } else {
+      phone = `+${loc.areaCode} ${Math.floor(Math.random() * 80000000 + 10000000)}`;
+    }
+
+    // SSN / ID Number
+    let ssn = '';
+    if (currentCountry.code === 'US') {
       const s1 = Math.floor(Math.random() * 800 + 100);
       const s2 = (Math.floor(Math.random() * 90) + 10).toString().padStart(2, '0');
       const s3 = Math.floor(Math.random() * 9000 + 1000);
-      const ssn = `${s1}-${s2}-${s3}`;
-
-      // Credit card: Visa (4) or MasterCard (51-55)
-      const isMaster = Math.random() > 0.5;
-      const cardType = isMaster ? 'MasterCard' : 'Visa';
-      const cardPrefix = isMaster ? '54' : '45';
-      const cardNumber = generateLuhnCardNumber(cardPrefix, 16);
-      const cvv2 = Math.floor(Math.random() * 900 + 100).toString();
-
-      // Expiry: e.g. 09/2028
-      const expMonth = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
-      const expYear = 2027 + Math.floor(Math.random() * 4);
-      const expireDate = `${expMonth}/${expYear}`;
-
-      // Salary
-      const salary = `$${(Math.floor(Math.random() * 80) * 100 + 3500).toLocaleString()}`;
-
-      // Temp email address (linked to TempMailService)
-      const emailPrefix = `${firstName.toLowerCase()}${lastName.toLowerCase().substring(0, 3)}_${Math.random().toString(36).substring(2, 6)}`;
-      const tempEmail = TempMailService.generateRandomAddress(emailPrefix);
-
-      return {
-        id: Math.random().toString(36).substring(2, 9),
-        country: 'US',
-        fullName,
-        gender: isMale ? 'Male' : 'Female',
-        birthDate,
-        title: isMale ? 'Mr.' : 'Ms.',
-        hairColor: HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)],
-        street,
-        county: loc.county,
-        city: loc.city,
-        state: stateData.code,
-        stateName: stateData.name,
-        zipCode: loc.zip,
-        phone,
-        tempEmail,
-        cardType,
-        cardNumber,
-        cvv2,
-        expireDate,
-        occupation: OCCUPATIONS[Math.floor(Math.random() * OCCUPATIONS.length)],
-        companyName: COMPANIES[Math.floor(Math.random() * COMPANIES.length)],
-        companySize: COMPANY_SIZES[Math.floor(Math.random() * COMPANY_SIZES.length)],
-        employmentStatus: EMPLOYMENT_STATUSES[Math.floor(Math.random() * EMPLOYMENT_STATUSES.length)],
-        monthlySalary: salary,
-        ssn,
-      };
+      ssn = `${s1}-${s2}-${s3}`;
+    } else if (currentCountry.code === 'GB') {
+      const chars = 'ABCEGHJKLMNOPRSTWXYZ';
+      const c1 = chars[Math.floor(Math.random() * chars.length)];
+      const c2 = chars[Math.floor(Math.random() * chars.length)];
+      ssn = `${c1}${c2} ${Math.floor(Math.random() * 90 + 10)} ${Math.floor(Math.random() * 90 + 10)} ${Math.floor(Math.random() * 90 + 10)} A`;
+    } else if (currentCountry.code === 'HK') {
+      const l = 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+      const num = Math.floor(Math.random() * 900000 + 100000);
+      const c = Math.floor(Math.random() * 10);
+      ssn = `${l}${num}(${c})`;
+    } else if (currentCountry.code === 'SG') {
+      const num = Math.floor(Math.random() * 9000000 + 1000000);
+      ssn = `S${num}A`;
+    } else if (currentCountry.code === 'JP') {
+      ssn = `${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`;
     } else {
-      // CN Mode
-      const loc = CN_PROVINCES[Math.floor(Math.random() * CN_PROVINCES.length)];
-      const isMale = Math.random() > 0.5;
-      const surnames = ['王', '李', '张', '刘', '陈', '杨', '赵', '黄', '周', '吴'];
-      const givenM = ['伟', '强', '磊', '洋', '勇', '军', '杰', '涛', '明', '浩'];
-      const givenF = ['芳', '娜', '敏', '静', '丽', '洁', '艳', '丹', '雪', '婷'];
-      const surname = surnames[Math.floor(Math.random() * surnames.length)];
-      const given = isMale
-        ? givenM[Math.floor(Math.random() * givenM.length)]
-        : givenF[Math.floor(Math.random() * givenF.length)];
-      const fullName = surname + given;
-
-      const birthYear = Math.floor(Math.random() * 30) + 1975;
-      const birthMonth = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
-      const birthDay = (Math.floor(Math.random() * 28) + 1).toString().padStart(2, '0');
-      const birthDate = `${birthYear}-${birthMonth}-${birthDay}`;
-
-      // ISO 7064 ID Card
-      const seq = Math.floor(Math.random() * 49) * 2 + (isMale ? 1 : 0);
-      const seqStr = seq.toString().padStart(3, '0');
-      const base17 = `${loc.prefix}${birthYear}${birthMonth}${birthDay}${seqStr}`;
-      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-      const checkDigits = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
-      let sum = 0;
-      for (let i = 0; i < 17; i++) sum += parseInt(base17[i], 10) * weights[i];
-      const idCardCn = `${base17}${checkDigits[sum % 11]}`;
-
-      const street = `${loc.streets[Math.floor(Math.random() * loc.streets.length)]}${Math.floor(Math.random() * 300) + 1}号`;
-      const phone = `138${Math.floor(Math.random() * 90000000 + 10000000)}`;
-      const tempEmail = TempMailService.generateRandomAddress(`cn_${Math.random().toString(36).substring(2, 8)}`);
-
-      return {
-        id: Math.random().toString(36).substring(2, 9),
-        country: 'CN',
-        fullName,
-        gender: isMale ? '男' : '女',
-        birthDate,
-        title: isMale ? '先生' : '女士',
-        hairColor: '黑色',
-        street,
-        county: loc.county,
-        city: loc.city,
-        state: loc.province,
-        stateName: loc.province,
-        zipCode: loc.zip,
-        phone,
-        tempEmail,
-        cardType: '银联 UnionPay',
-        cardNumber: generateLuhnCardNumber('6222', 19),
-        cvv2: Math.floor(Math.random() * 900 + 100).toString(),
-        expireDate: '12/2028',
-        occupation: '高级软件工程师',
-        companyName: '极客创新科技有限公司',
-        companySize: '51-200 人',
-        employmentStatus: '全职工作',
-        monthlySalary: '¥28,500',
-        ssn: '无',
-        idCardCn,
-      };
+      ssn = `${Math.floor(Math.random() * 90000000 + 10000000)}`;
     }
+
+    // Credit Card with valid Luhn
+    const isMaster = Math.random() > 0.5;
+    const cardType = isMaster ? 'MasterCard' : 'Visa';
+    const cardPrefix = isMaster ? '54' : '45';
+    const cardNumber = generateLuhnCard(cardPrefix, 16);
+    const cvv2 = Math.floor(Math.random() * 900 + 100).toString();
+    const expMonth = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
+    const expYear = 2027 + Math.floor(Math.random() * 4);
+    const expireDate = `${expMonth}/${expYear}`;
+
+    // Salary with currency symbol
+    const salaryVal = (Math.floor(Math.random() * 70) * 100 + 3500).toLocaleString();
+    const monthlySalary = `${currentCountry.currencySymbol}${salaryVal}`;
+
+    // Temp email
+    const emailPrefix = `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${Math.random().toString(36).substring(2, 6)}`;
+    const tempEmail = TempMailService.generateRandomAddress(emailPrefix);
+
+    return {
+      id: Math.random().toString(36).substring(2, 9),
+      countryCode: currentCountry.code,
+      countryName: currentCountry.name,
+      fullName,
+      gender: isMale ? 'Male' : 'Female',
+      birthDate,
+      title,
+      hairColor: HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)],
+      street,
+      county: loc.county,
+      city: loc.city,
+      state: region.code,
+      stateName: region.name,
+      zipCode: loc.zip,
+      phone,
+      tempEmail,
+      cardType,
+      cardNumber,
+      cvv2,
+      expireDate,
+      occupation: OCCUPATIONS[Math.floor(Math.random() * OCCUPATIONS.length)],
+      companyName: COMPANIES[Math.floor(Math.random() * COMPANIES.length)],
+      companySize: COMPANY_SIZES[Math.floor(Math.random() * COMPANY_SIZES.length)],
+      employmentStatus: EMPLOYMENT_STATUSES[Math.floor(Math.random() * EMPLOYMENT_STATUSES.length)],
+      monthlySalary,
+      ssn,
+    };
   };
 
   const regenerate = () => {
-    const data = generateSingleIdentity();
-    setIdentity(data);
+    setIdentity(generateIdentity());
   };
 
   useEffect(() => {
     regenerate();
-  }, [targetCountry, selectedStateCode]);
+  }, [selectedCountryCode, selectedRegionCode]);
 
   const copyField = (val: string, keyName: string) => {
     navigator.clipboard.writeText(val);
@@ -442,11 +610,12 @@ Title: ${identity.title}
 头发颜色: ${identity.hairColor}
 
 【地址信息】
+国家: ${identity.countryName}
 街道: ${identity.street}
 区县: ${identity.county}
 城市: ${identity.city}
-州代码: ${identity.state}
-州全称: ${identity.stateName}
+${currentCountry.regionLabel}代码: ${identity.state}
+${currentCountry.regionLabel}全称: ${identity.stateName}
 邮编: ${identity.zipCode}
 电话号码: ${identity.phone}
 临时邮箱: ${identity.tempEmail}
@@ -461,12 +630,11 @@ CVV2: ${identity.cvv2}
 公司规模: ${identity.companySize}
 就业状态: ${identity.employmentStatus}
 月薪: ${identity.monthlySalary}
-社会保障号 (SSN): ${identity.ssn}
-${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
+${currentCountry.idLabel}: ${identity.ssn}
     `.trim();
 
     navigator.clipboard.writeText(formatted);
-    toast('已复制完整身份档案到剪贴板', 'success');
+    toast('已复制完整身份档案', 'success');
   };
 
   const exportJson = () => {
@@ -475,7 +643,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `identity_${identity.fullName.replace(/\s+/g, '_')}.json`;
+    a.download = `identity_${identity.countryCode}_${identity.fullName.replace(/\s+/g, '_')}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast('已导出身份 JSON', 'success');
@@ -491,7 +659,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `identity_${identity.fullName.replace(/\s+/g, '_')}.csv`;
+    a.download = `identity_${identity.countryCode}_${identity.fullName.replace(/\s+/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast('已导出 CSV 表格', 'success');
@@ -516,7 +684,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
             style={{
               fontWeight: 600,
               color: 'var(--text-primary)',
-              fontFamily: ['卡号', '邮编', '电话', 'SSN', '生日', 'CVV2'].some((k) => label.includes(k))
+              fontFamily: ['卡号', '邮编', '电话', 'SSN', '生日', 'CVV2', '号码', '税号', 'NIN', 'TFN', 'DNI'].some((k) => label.includes(k))
                 ? 'var(--font-mono)'
                 : 'inherit',
               wordBreak: 'break-word',
@@ -527,7 +695,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
           {isLinkToMail && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                (已就绪，
+                (这是一个真实的邮箱，
                 <button
                   type="button"
                   onClick={() => onNavigateToTempMail?.(value)}
@@ -542,7 +710,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
                     fontWeight: 600,
                   }}
                 >
-                  点击联动接收邮件
+                  点击这里接收邮件
                 </button>
                 )
               </span>
@@ -577,53 +745,50 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
           gap: '16px',
         }}
       >
-        {/* Country & State Selector */}
+        {/* Dynamic Country & Region Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          {/* Country Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>地区:</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button
-                className={`btn ${targetCountry === 'US' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
-                onClick={() => setTargetCountry('US')}
-              >
-                🇺🇸 美国 (默认)
-              </button>
-              <button
-                className={`btn ${targetCountry === 'CN' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
-                onClick={() => setTargetCountry('CN')}
-              >
-                🇨🇳 中国
-              </button>
-            </div>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>国家/地区:</span>
+            <select
+              className="select-box"
+              style={{ width: '180px', padding: '6px 10px', fontSize: '0.875rem', fontWeight: 500 }}
+              value={selectedCountryCode}
+              onChange={(e) => handleCountryChange(e.target.value)}
+            >
+              {COUNTRIES_DATABASE.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.flag} {c.name} ({c.nameEn})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {targetCountry === 'US' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>选择州 (State):</span>
-              <select
-                className="select-box"
-                style={{ width: '180px', padding: '6px 10px', fontSize: '0.8125rem' }}
-                value={selectedStateCode}
-                onChange={(e) => setSelectedStateCode(e.target.value)}
-              >
-                <option value="ALL">全美随机 (All States)</option>
-                <option value="TX">德克萨斯州 Texas (TX)</option>
-                <option value="CA">加利福尼亚州 California (CA)</option>
-                <option value="NY">纽约州 New York (NY)</option>
-                <option value="FL">佛罗里达州 Florida (FL)</option>
-                <option value="WA">华盛顿州 Washington (WA)</option>
-                <option value="IL">伊利诺伊州 Illinois (IL)</option>
-              </select>
-            </div>
-          )}
+          {/* Region Dropdown dynamically shown depending on selected country */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              {currentCountry.regionLabel}:
+            </span>
+            <select
+              className="select-box"
+              style={{ width: '220px', padding: '6px 10px', fontSize: '0.8125rem' }}
+              value={selectedRegionCode}
+              onChange={(e) => setSelectedRegionCode(e.target.value)}
+            >
+              <option value="ALL">全部随机 (All {currentCountry.regionLabel.split(' ')[0]})</option>
+              {currentCountry.regions.map((r) => (
+                <option key={r.code} value={r.code}>
+                  {r.name} ({r.code})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Global Actions */}
+        {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button className="btn btn-secondary" onClick={copyAll}>
-            <Copy size={15} /> 复制全部档案
+            <Copy size={15} /> 复制全部
           </button>
           <button className="btn btn-secondary" onClick={exportJson}>
             <FileJson size={15} /> 导出 JSON
@@ -632,7 +797,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
             <FileSpreadsheet size={15} /> 导出 CSV
           </button>
           <button className="btn btn-primary" onClick={regenerate}>
-            <RefreshCw size={15} /> 随机换一个
+            <RefreshCw size={15} /> 换一个
           </button>
         </div>
       </div>
@@ -686,8 +851,8 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
             {renderRow('街道', identity.street, '街道')}
             {renderRow('区县', identity.county, '区县')}
             {renderRow('城市', identity.city, '城市')}
-            {renderRow('州', identity.state, '州')}
-            {renderRow('州全称', identity.stateName, '州全称')}
+            {renderRow(`${currentCountry.regionLabel.split(' ')[0]}缩写`, identity.state, '州缩写')}
+            {renderRow(`${currentCountry.regionLabel.split(' ')[0]}全称`, identity.stateName, '州全称')}
             {renderRow('邮编', identity.zipCode, '邮编')}
             {renderRow('电话号码', identity.phone, '电话号码')}
             {renderRow('临时邮箱', identity.tempEmail, '临时邮箱', true)}
@@ -717,8 +882,7 @@ ${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
             {renderRow('公司规模', identity.companySize, '公司规模')}
             {renderRow('就业状态', identity.employmentStatus, '就业状态')}
             {renderRow('月薪', identity.monthlySalary, '月薪')}
-            {renderRow('社会保障号', identity.ssn, '社会保障号')}
-            {identity.idCardCn && renderRow('身份证号 (ISO 7064)', identity.idCardCn, '身份证号')}
+            {renderRow(currentCountry.idLabel, identity.ssn, currentCountry.idLabel)}
           </div>
         </div>
       )}
