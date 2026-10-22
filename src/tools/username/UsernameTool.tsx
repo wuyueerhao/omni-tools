@@ -125,7 +125,7 @@ export const UsernameTool: React.FC = () => {
           <div>
             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={18} color="var(--accent-primary)" />
-              多风格极客用户名生成器
+              用户名生成器
             </h3>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               适用于社交账号、GitHub、游戏昵称、极客代号生成

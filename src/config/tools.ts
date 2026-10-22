@@ -56,7 +56,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     id: 'username-generator',
-    name: '极客用户名生成',
+    name: '用户名生成',
     nameEn: 'Username Matrix',
     category: 'identity',
     iconName: 'Sparkles',
@@ -78,7 +78,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     id: 'pdf-toolkit',
-    name: 'PDF 纯前端工具箱',
+    name: 'PDF工具',
     nameEn: 'PDF Toolkit',
     category: 'office',
     iconName: 'FileText',
@@ -100,7 +100,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     id: 'excel-studio',
-    name: 'Excel 表格工作室',
+    name: 'Excel工具',
     nameEn: 'Excel & CSV Studio',
     category: 'office',
     iconName: 'Table',

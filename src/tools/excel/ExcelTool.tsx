@@ -117,7 +117,7 @@ export const ExcelTool: React.FC = () => {
       {!workbook ? (
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Excel 表格工作室</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Excel工具</h3>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
               支持 .xlsx, .xls, .csv 文件纯本地解析。格式无损互转 (Excel/CSV/JSON)、大表在线快速过滤与清洗。
             </p>
