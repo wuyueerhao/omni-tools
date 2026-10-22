@@ -65,19 +65,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleQuickAdminLogin = async () => {
-    setIsLoading(true);
-    try {
-      const user = await AuthService.login('world', 'dl0101');
-      toast(`已快捷登录超级管理员: ${user.username}`, 'success');
-      onSuccess?.();
-      onClose();
-    } catch (err: any) {
-      toast(err.message || '登录失败', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleOAuthLogin = async (provider: AuthProvider) => {
     setIsLoading(true);
@@ -179,7 +166,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <input
                 type="text"
                 className="input-text"
-                placeholder="例如: world 或 world@vnvnv.com"
+                placeholder="请输入用户名或注册邮箱"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 autoFocus
@@ -193,7 +180,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <input
                 type="password"
                 className="input-text"
-                placeholder="默认管理员密码为 dl0101"
+                placeholder="请输入登录密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -201,22 +188,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <button type="submit" className="btn btn-primary" style={{ marginTop: '6px' }} disabled={isLoading}>
               {isLoading ? '验证登录中...' : '立即登录'}
-            </button>
-
-            {/* Quick Demo Fill Button */}
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{
-                fontSize: '0.8125rem',
-                borderStyle: 'dashed',
-                borderColor: 'var(--accent-primary)',
-                color: 'var(--accent-primary)',
-              }}
-              onClick={handleQuickAdminLogin}
-              disabled={isLoading}
-            >
-              <Sparkles size={14} /> 一键填入并登录管理员 (world / dl0101)
             </button>
           </form>
         ) : (
