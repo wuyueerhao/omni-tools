@@ -17,11 +17,13 @@ import { IdentityTool } from './tools/identity/IdentityTool';
 import { PdfTool } from './tools/pdf/PdfTool';
 import { ImageTool } from './tools/image/ImageTool';
 import { ExcelTool } from './tools/excel/ExcelTool';
+import { TempMailTool } from './tools/mail/TempMailTool';
 
 export const AppContent: React.FC = () => {
   const [currentToolId, setCurrentToolId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory | 'all'>('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [linkedEmail, setLinkedEmail] = useState<string | undefined>(undefined);
 
   // Global Keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -42,6 +44,11 @@ export const AppContent: React.FC = () => {
     return t.category === selectedCategory;
   });
 
+  const handleNavigateToMail = (email: string) => {
+    setLinkedEmail(email);
+    setCurrentToolId('temp-mail');
+  };
+
   const renderActiveToolView = (tool: ToolDefinition) => {
     switch (tool.id) {
       case '2fa-authenticator':
@@ -51,7 +58,9 @@ export const AppContent: React.FC = () => {
       case 'username-generator':
         return <UsernameTool />;
       case 'identity-generator':
-        return <IdentityTool />;
+        return <IdentityTool onNavigateToTempMail={handleNavigateToMail} />;
+      case 'temp-mail':
+        return <TempMailTool initialEmail={linkedEmail} />;
       case 'pdf-toolkit':
         return <PdfTool />;
       case 'image-processor':

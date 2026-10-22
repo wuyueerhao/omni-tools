@@ -1,273 +1,629 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, RefreshCw, FileSpreadsheet, FileJson, MapPin, ShieldAlert } from 'lucide-react';
+import { Copy, RefreshCw, FileSpreadsheet, FileJson, Check } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
+import { TempMailService } from '../../services/tempMailService';
 
-type CountryCode = 'CN' | 'US';
-
-interface MockIdentity {
-  id: string;
-  country: CountryCode;
-  fullName: string;
-  gender: '男' | '女' | 'Male' | 'Female';
-  age: number;
-  birthDate: string;
-  idNumber: string; // 身份证/SSN
-  phone: string;
-  email: string;
-  address: string;
+interface RealUSCityLocation {
   city: string;
-  state: string;
-  zipCode: string;
+  county: string;
+  zip: string;
+  areaCode: string;
+  realStreets: string[];
 }
 
-// Data pools for CN
-const CN_SURNAMES = ['王', '李', '张', '刘', '陈', '杨', '赵', '黄', '周', '吴', '徐', '孙', '胡', '朱', '高', '林', '何', '郭', '马', '罗'];
-const CN_GIVEN_NAMES_M = ['伟', '强', '磊', '洋', '勇', '军', '杰', '涛', '超', '明', '浩', '辉', '刚', '平', '志强', '建华', '天宇', '子豪'];
-const CN_GIVEN_NAMES_F = ['芳', '娜', '敏', '静', '丽', '秀英', '洁', '艳', '丹', '雪', '婷', '琳', '思琪', '雨桐', '欣怡', '美琪'];
-const CN_CITIES = [
-  { province: '北京市', city: '朝阳区', zip: '100020', prefix: '110105' },
-  { province: '北京市', city: '海淀区', zip: '100080', prefix: '110108' },
-  { province: '上海市', city: '浦东新区', zip: '200120', prefix: '310115' },
-  { province: '上海市', city: '徐汇区', zip: '200030', prefix: '310104' },
-  { province: '广东省', city: '深圳市南山区', zip: '518057', prefix: '440305' },
-  { province: '广东省', city: '广州市天河区', zip: '510630', prefix: '440106' },
-  { province: '浙江省', city: '杭州市西湖区', zip: '310013', prefix: '330106' },
-  { province: '江苏省', city: '南京市玄武区', zip: '210008', prefix: '320102' },
-  { province: '四川省', city: '成都市武侯区', zip: '610041', prefix: '510107' },
+interface USStateData {
+  code: string;
+  name: string;
+  locations: RealUSCityLocation[];
+}
+
+const US_STATES_DATABASE: USStateData[] = [
+  {
+    code: 'TX',
+    name: 'Texas',
+    locations: [
+      {
+        city: 'Fort Worth',
+        county: 'Tarrant County',
+        zip: '76107',
+        areaCode: '817',
+        realStreets: ['Moore Avenue', 'Camp Bowie Boulevard', 'Montgomery Street', 'University Drive', 'Bailey Avenue'],
+      },
+      {
+        city: 'Dallas',
+        county: 'Dallas County',
+        zip: '75201',
+        areaCode: '214',
+        realStreets: ['Elm Street', 'Commerce Street', 'Main Street', 'Pacific Avenue', 'Ross Avenue'],
+      },
+      {
+        city: 'Austin',
+        county: 'Travis County',
+        zip: '78701',
+        areaCode: '512',
+        realStreets: ['Congress Avenue', 'Lavaca Street', 'Guadalupe Street', 'Colorado Street', 'Brazos Street'],
+      },
+      {
+        city: 'Houston',
+        county: 'Harris County',
+        zip: '77002',
+        areaCode: '713',
+        realStreets: ['Travis Street', 'Louisiana Street', 'Capitol Street', 'Milam Street', 'Fannin Street'],
+      },
+    ],
+  },
+  {
+    code: 'CA',
+    name: 'California',
+    locations: [
+      {
+        city: 'Los Angeles',
+        county: 'Los Angeles County',
+        zip: '90012',
+        areaCode: '213',
+        realStreets: ['Grand Avenue', 'Spring Street', 'Hope Street', 'Figueroa Street', 'Hill Street'],
+      },
+      {
+        city: 'San Francisco',
+        county: 'San Francisco County',
+        zip: '94102',
+        areaCode: '415',
+        realStreets: ['Market Street', 'Mission Street', 'Geary Street', 'Van Ness Avenue', 'Sutter Street'],
+      },
+      {
+        city: 'San Diego',
+        county: 'San Diego County',
+        zip: '92101',
+        areaCode: '619',
+        realStreets: ['Broadway', 'Ash Street', 'Front Street', 'State Street', 'Union Street'],
+      },
+      {
+        city: 'San Jose',
+        county: 'Santa Clara County',
+        zip: '95113',
+        areaCode: '408',
+        realStreets: ['First Street', 'Market Street', 'Santa Clara Street', 'San Fernando Street'],
+      },
+    ],
+  },
+  {
+    code: 'NY',
+    name: 'New York',
+    locations: [
+      {
+        city: 'New York',
+        county: 'New York County (Manhattan)',
+        zip: '10001',
+        areaCode: '212',
+        realStreets: ['7th Avenue', 'Broadway', '8th Avenue', 'W 34th Street', 'Americas Avenue'],
+      },
+      {
+        city: 'Brooklyn',
+        county: 'Kings County',
+        zip: '11201',
+        areaCode: '718',
+        realStreets: ['Atlantic Avenue', 'Fulton Street', 'Court Street', 'Joralemon Street', 'Adams Street'],
+      },
+      {
+        city: 'Buffalo',
+        county: 'Erie County',
+        zip: '14202',
+        areaCode: '716',
+        realStreets: ['Main Street', 'Delaware Avenue', 'Pearl Street', 'Church Street', 'Franklin Street'],
+      },
+    ],
+  },
+  {
+    code: 'FL',
+    name: 'Florida',
+    locations: [
+      {
+        city: 'Miami',
+        county: 'Miami-Dade County',
+        zip: '33130',
+        areaCode: '305',
+        realStreets: ['Brickell Avenue', 'Biscayne Boulevard', 'SW 8th Street', 'S Miami Avenue', 'Flagler Street'],
+      },
+      {
+        city: 'Orlando',
+        county: 'Orange County',
+        zip: '32801',
+        areaCode: '407',
+        realStreets: ['Orange Avenue', 'Magnolia Avenue', 'Rosalind Avenue', 'Central Boulevard', 'Church Street'],
+      },
+      {
+        city: 'Tampa',
+        county: 'Hillsborough County',
+        zip: '33602',
+        areaCode: '813',
+        realStreets: ['Tampa Street', 'Florida Avenue', 'Franklin Street', 'Ashley Drive', 'Kennedy Boulevard'],
+      },
+    ],
+  },
+  {
+    code: 'WA',
+    name: 'Washington',
+    locations: [
+      {
+        city: 'Seattle',
+        county: 'King County',
+        zip: '98101',
+        areaCode: '206',
+        realStreets: ['Pike Street', 'Pine Street', '4th Avenue', '5th Avenue', 'Stewart Street'],
+      },
+      {
+        city: 'Bellevue',
+        county: 'King County',
+        zip: '98004',
+        areaCode: '425',
+        realStreets: ['Bellevue Way NE', 'NE 8th Street', '106th Avenue NE', 'Main Street'],
+      },
+    ],
+  },
+  {
+    code: 'IL',
+    name: 'Illinois',
+    locations: [
+      {
+        city: 'Chicago',
+        county: 'Cook County',
+        zip: '60601',
+        areaCode: '312',
+        realStreets: ['Michigan Avenue', 'State Street', 'Wacker Drive', 'Dearborn Street', 'Clark Street'],
+      },
+    ],
+  },
 ];
-const CN_STREETS = ['科技大道', '创新一路', '人民路', '中山北路', '建设东街', '金科路', '文三西路', '高新南环路', '创业软件园'];
 
-// Data pools for US
-const US_FIRST_NAMES_M = ['James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Charles', 'Daniel', 'Matthew'];
-const US_FIRST_NAMES_F = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen', 'Lisa', 'Emily'];
-const US_LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez'];
-const US_CITIES = [
-  { state: 'California', city: 'Los Angeles', zip: '90001', areaCode: '213' },
-  { state: 'California', city: 'San Francisco', zip: '94102', areaCode: '415' },
-  { state: 'New York', city: 'New York', zip: '10001', areaCode: '212' },
-  { state: 'Texas', city: 'Austin', zip: '78701', areaCode: '512' },
-  { state: 'Washington', city: 'Seattle', zip: '98101', areaCode: '206' },
-  { state: 'Florida', city: 'Miami', zip: '33101', areaCode: '305' },
-  { state: 'Illinois', city: 'Chicago', zip: '60601', areaCode: '312' },
+// Chinese Mock Database
+const CN_PROVINCES = [
+  { province: '广东省', city: '深圳市', county: '南山区', zip: '518057', prefix: '440305', streets: ['高新南环路', '科技南路', '科苑大道', '深南大道'] },
+  { province: '北京市', city: '北京市', county: '朝阳区', zip: '100020', prefix: '110105', streets: ['建国门外大街', '朝阳北路', '东三环中路', '光华路'] },
+  { province: '上海市', city: '上海市', county: '浦东新区', zip: '200120', prefix: '310115', streets: ['世纪大道', '陆家嘴环路', '张江路', '张衡路'] },
+  { province: '浙江省', city: '杭州市', county: '西湖区', zip: '310013', prefix: '330106', streets: ['文三西路', '天目山路', '文一西路', '教工路'] },
 ];
-const US_STREETS = ['Oak Street', 'Maple Avenue', 'Cedar Lane', 'Sunset Boulevard', 'Pine Street', 'Market Street', 'Broad Avenue'];
 
-export const IdentityTool: React.FC = () => {
-  const { toast } = useToast();
-  const [country, setCountry] = useState<CountryCode>('CN');
-  const [count, setCount] = useState<number>(5);
-  const [records, setRecords] = useState<MockIdentity[]>([]);
+export interface DetailedIdentity {
+  id: string;
+  country: 'US' | 'CN';
+  // 基本资料
+  fullName: string;
+  gender: 'Male' | 'Female' | '男' | '女';
+  birthDate: string; // 1/27/1975
+  title: string; // Mr. / Ms.
+  hairColor: string; // Brown, Black, Blonde
 
-  // Generate ISO 7064:1983.MOD 11-2 Chinese ID Card Number
-  const generateCnIdCard = (areaPrefix: string, birthDateStr: string, isMale: boolean): string => {
-    const seq = Math.floor(Math.random() * 49) * 2 + (isMale ? 1 : 0);
-    const seqStr = seq.toString().padStart(3, '0');
-    const base17 = `${areaPrefix}${birthDateStr}${seqStr}`;
+  // 地址
+  street: string; // 160 Moore Avenue
+  county: string; // Tarrant County
+  city: string; // Fort Worth
+  state: string; // TX
+  stateName: string; // Texas
+  zipCode: string; // 76107
+  phone: string; // 817-733-2396
+  tempEmail: string;
 
-    const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-    const checkDigits = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+  // 就业 & 信用卡
+  cardType: string; // MasterCard / Visa / American Express
+  cardNumber: string; // 5409...
+  cvv2: string; // 881
+  expireDate: string; // 09/2028
+  occupation: string; // Logging Equipment Operator, Informatics Nurse Specialist
+  companyName: string; // Omni Tech
+  companySize: string; // 19-50 employees
+  employmentStatus: string; // Part-time work / Full-time work
+  monthlySalary: string; // $5,700
+  ssn: string; // 858-44-6370
+  idCardCn?: string; // 身份证号码
+}
 
-    let sum = 0;
-    for (let i = 0; i < 17; i++) {
-      sum += parseInt(base17[i], 10) * weights[i];
+// Luhn Algorithm generator for valid test card numbers
+function generateLuhnCardNumber(prefix: string, length: number): string {
+  let card = prefix;
+  while (card.length < length - 1) {
+    card += Math.floor(Math.random() * 10);
+  }
+  // calculate checksum
+  let sum = 0;
+  let doubleUp = true;
+  for (let i = card.length - 1; i >= 0; i--) {
+    let digit = parseInt(card[i], 10);
+    if (doubleUp) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
     }
-    const checkChar = checkDigits[sum % 11];
-    return `${base17}${checkChar}`;
-  };
+    sum += digit;
+    doubleUp = !doubleUp;
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return card + checkDigit;
+}
 
-  const generateIdentity = (c: CountryCode): MockIdentity => {
-    const isMale = Math.random() > 0.5;
-    const age = Math.floor(Math.random() * 40) + 20; // 20 - 59
-    const year = 2026 - age;
-    const month = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
-    const day = (Math.floor(Math.random() * 28) + 1).toString().padStart(2, '0');
-    const birthDate = `${year}-${month}-${day}`;
-    const id = Math.random().toString(36).substring(2, 9);
+interface IdentityToolProps {
+  onNavigateToTempMail?: (email: string) => void;
+}
 
-    if (c === 'CN') {
-      const surname = CN_SURNAMES[Math.floor(Math.random() * CN_SURNAMES.length)];
-      const given = isMale
-        ? CN_GIVEN_NAMES_M[Math.floor(Math.random() * CN_GIVEN_NAMES_M.length)]
-        : CN_GIVEN_NAMES_F[Math.floor(Math.random() * CN_GIVEN_NAMES_F.length)];
-      const fullName = `${surname}${given}`;
-      const loc = CN_CITIES[Math.floor(Math.random() * CN_CITIES.length)];
-      const birthCompact = `${year}${month}${day}`;
-      const idNumber = generateCnIdCard(loc.prefix, birthCompact, isMale);
+export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail }) => {
+  const { toast } = useToast();
+  const [targetCountry, setTargetCountry] = useState<'US' | 'CN'>('US'); // 默认美国
+  const [selectedStateCode, setSelectedStateCode] = useState<string>('ALL'); // 默认全美
+  const [identity, setIdentity] = useState<DetailedIdentity | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-      const phonePrefixes = ['138', '139', '150', '186', '189', '198', '177'];
-      const phone = `${phonePrefixes[Math.floor(Math.random() * phonePrefixes.length)]}${Math.floor(Math.random() * 90000000 + 10000000)}`;
-      const streetNum = Math.floor(Math.random() * 200) + 1;
-      const street = CN_STREETS[Math.floor(Math.random() * CN_STREETS.length)];
-      const address = `${loc.province}${loc.city}${street}${streetNum}号`;
-      const email = `test_${Math.random().toString(36).substring(2, 8)}@example.com`;
+  const FIRST_NAMES_M = ['James', 'Robert', 'John', 'Michael', 'David', 'William', 'Richard', 'Joseph', 'Thomas', 'Charles', 'Christopher', 'Daniel'];
+  const FIRST_NAMES_F = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen', 'Nancy', 'Lisa'];
+  const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Moore', 'Wilson'];
+  const HAIR_COLORS = ['Brown', 'Black', 'Blonde', 'Auburn', 'Chestnut', 'Gray'];
+  const OCCUPATIONS = [
+    'Logging Equipment Operator, Informatics Nurse Specialist',
+    'Senior Software Engineer & Cloud Architect',
+    'Data Scientist, Financial Risk Analyst',
+    'Biomedical Engineer, Clinical Research Associate',
+    'Operations Manager, Supply Chain Consultant',
+    'Digital Marketing Strategist, SEO Lead',
+    'Product Designer & UX Researcher',
+  ];
+  const COMPANIES = ['Omni Tech', 'Apex Solutions', 'Nexus Systems', 'Summit Dynamics', 'Vanguard Innovations', 'Horizon Global'];
+  const COMPANY_SIZES = ['1-10 employees', '19-50 employees', '51-200 employees', '201-500 employees', '500+ employees'];
+  const EMPLOYMENT_STATUSES = ['Full-time work', 'Part-time work', 'Contract', 'Self-employed'];
+
+  const generateSingleIdentity = (): DetailedIdentity => {
+    if (targetCountry === 'US') {
+      let stateData: USStateData;
+      if (selectedStateCode !== 'ALL') {
+        stateData = US_STATES_DATABASE.find((s) => s.code === selectedStateCode) || US_STATES_DATABASE[0];
+      } else {
+        stateData = US_STATES_DATABASE[Math.floor(Math.random() * US_STATES_DATABASE.length)];
+      }
+
+      const loc = stateData.locations[Math.floor(Math.random() * stateData.locations.length)];
+      const isMale = Math.random() > 0.5;
+      const firstName = isMale
+        ? FIRST_NAMES_M[Math.floor(Math.random() * FIRST_NAMES_M.length)]
+        : FIRST_NAMES_F[Math.floor(Math.random() * FIRST_NAMES_F.length)];
+      const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+      const fullName = `${firstName} ${lastName}`;
+
+      // Birthdate: e.g. 1/27/1975
+      const birthYear = Math.floor(Math.random() * 35) + 1968;
+      const birthMonth = Math.floor(Math.random() * 12) + 1;
+      const birthDay = Math.floor(Math.random() * 28) + 1;
+      const birthDate = `${birthMonth}/${birthDay}/${birthYear}`;
+
+      // Real street address
+      const streetNum = Math.floor(Math.random() * 800) + 10;
+      const streetName = loc.realStreets[Math.floor(Math.random() * loc.realStreets.length)];
+      const street = `${streetNum} ${streetName}`;
+
+      // Phone: Real Area Code format: e.g. 817-733-2396
+      const p1 = Math.floor(Math.random() * 800 + 200);
+      const p2 = Math.floor(Math.random() * 9000 + 1000);
+      const phone = `${loc.areaCode}-${p1}-${p2}`;
+
+      // SSN: e.g. 858-44-6370
+      const s1 = Math.floor(Math.random() * 800 + 100);
+      const s2 = (Math.floor(Math.random() * 90) + 10).toString().padStart(2, '0');
+      const s3 = Math.floor(Math.random() * 9000 + 1000);
+      const ssn = `${s1}-${s2}-${s3}`;
+
+      // Credit card: Visa (4) or MasterCard (51-55)
+      const isMaster = Math.random() > 0.5;
+      const cardType = isMaster ? 'MasterCard' : 'Visa';
+      const cardPrefix = isMaster ? '54' : '45';
+      const cardNumber = generateLuhnCardNumber(cardPrefix, 16);
+      const cvv2 = Math.floor(Math.random() * 900 + 100).toString();
+
+      // Expiry: e.g. 09/2028
+      const expMonth = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
+      const expYear = 2027 + Math.floor(Math.random() * 4);
+      const expireDate = `${expMonth}/${expYear}`;
+
+      // Salary
+      const salary = `$${(Math.floor(Math.random() * 80) * 100 + 3500).toLocaleString()}`;
+
+      // Temp email address (linked to TempMailService)
+      const emailPrefix = `${firstName.toLowerCase()}${lastName.toLowerCase().substring(0, 3)}_${Math.random().toString(36).substring(2, 6)}`;
+      const tempEmail = TempMailService.generateRandomAddress(emailPrefix);
 
       return {
-        id,
-        country: 'CN',
-        fullName,
-        gender: isMale ? '男' : '女',
-        age,
-        birthDate,
-        idNumber,
-        phone,
-        email,
-        address,
-        city: loc.city,
-        state: loc.province,
-        zipCode: loc.zip,
-      };
-    } else {
-      // US Mode
-      const first = isMale
-        ? US_FIRST_NAMES_M[Math.floor(Math.random() * US_FIRST_NAMES_M.length)]
-        : US_FIRST_NAMES_F[Math.floor(Math.random() * US_FIRST_NAMES_F.length)];
-      const last = US_LAST_NAMES[Math.floor(Math.random() * US_LAST_NAMES.length)];
-      const fullName = `${first} ${last}`;
-      const loc = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
-
-      const s1 = Math.floor(Math.random() * 899 + 100);
-      const s2 = Math.floor(Math.random() * 89 + 10);
-      const s3 = Math.floor(Math.random() * 8999 + 1000);
-      const idNumber = `${s1}-${s2}-${s3}`; // Mock SSN
-
-      const p1 = Math.floor(Math.random() * 899 + 100);
-      const p2 = Math.floor(Math.random() * 8999 + 1000);
-      const phone = `+1 (${loc.areaCode}) ${p1}-${p2}`;
-
-      const streetNum = Math.floor(Math.random() * 900) + 100;
-      const street = US_STREETS[Math.floor(Math.random() * US_STREETS.length)];
-      const address = `${streetNum} ${street}, Apt ${Math.floor(Math.random() * 50) + 1}`;
-      const email = `${first.toLowerCase()}.${last.toLowerCase()}${Math.floor(Math.random() * 90 + 10)}@example.com`;
-
-      return {
-        id,
+        id: Math.random().toString(36).substring(2, 9),
         country: 'US',
         fullName,
         gender: isMale ? 'Male' : 'Female',
-        age,
         birthDate,
-        idNumber,
-        phone,
-        email,
-        address,
+        title: isMale ? 'Mr.' : 'Ms.',
+        hairColor: HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)],
+        street,
+        county: loc.county,
         city: loc.city,
-        state: loc.state,
+        state: stateData.code,
+        stateName: stateData.name,
         zipCode: loc.zip,
+        phone,
+        tempEmail,
+        cardType,
+        cardNumber,
+        cvv2,
+        expireDate,
+        occupation: OCCUPATIONS[Math.floor(Math.random() * OCCUPATIONS.length)],
+        companyName: COMPANIES[Math.floor(Math.random() * COMPANIES.length)],
+        companySize: COMPANY_SIZES[Math.floor(Math.random() * COMPANY_SIZES.length)],
+        employmentStatus: EMPLOYMENT_STATUSES[Math.floor(Math.random() * EMPLOYMENT_STATUSES.length)],
+        monthlySalary: salary,
+        ssn,
+      };
+    } else {
+      // CN Mode
+      const loc = CN_PROVINCES[Math.floor(Math.random() * CN_PROVINCES.length)];
+      const isMale = Math.random() > 0.5;
+      const surnames = ['王', '李', '张', '刘', '陈', '杨', '赵', '黄', '周', '吴'];
+      const givenM = ['伟', '强', '磊', '洋', '勇', '军', '杰', '涛', '明', '浩'];
+      const givenF = ['芳', '娜', '敏', '静', '丽', '洁', '艳', '丹', '雪', '婷'];
+      const surname = surnames[Math.floor(Math.random() * surnames.length)];
+      const given = isMale
+        ? givenM[Math.floor(Math.random() * givenM.length)]
+        : givenF[Math.floor(Math.random() * givenF.length)];
+      const fullName = surname + given;
+
+      const birthYear = Math.floor(Math.random() * 30) + 1975;
+      const birthMonth = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
+      const birthDay = (Math.floor(Math.random() * 28) + 1).toString().padStart(2, '0');
+      const birthDate = `${birthYear}-${birthMonth}-${birthDay}`;
+
+      // ISO 7064 ID Card
+      const seq = Math.floor(Math.random() * 49) * 2 + (isMale ? 1 : 0);
+      const seqStr = seq.toString().padStart(3, '0');
+      const base17 = `${loc.prefix}${birthYear}${birthMonth}${birthDay}${seqStr}`;
+      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+      const checkDigits = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+      let sum = 0;
+      for (let i = 0; i < 17; i++) sum += parseInt(base17[i], 10) * weights[i];
+      const idCardCn = `${base17}${checkDigits[sum % 11]}`;
+
+      const street = `${loc.streets[Math.floor(Math.random() * loc.streets.length)]}${Math.floor(Math.random() * 300) + 1}号`;
+      const phone = `138${Math.floor(Math.random() * 90000000 + 10000000)}`;
+      const tempEmail = TempMailService.generateRandomAddress(`cn_${Math.random().toString(36).substring(2, 8)}`);
+
+      return {
+        id: Math.random().toString(36).substring(2, 9),
+        country: 'CN',
+        fullName,
+        gender: isMale ? '男' : '女',
+        birthDate,
+        title: isMale ? '先生' : '女士',
+        hairColor: '黑色',
+        street,
+        county: loc.county,
+        city: loc.city,
+        state: loc.province,
+        stateName: loc.province,
+        zipCode: loc.zip,
+        phone,
+        tempEmail,
+        cardType: '银联 UnionPay',
+        cardNumber: generateLuhnCardNumber('6222', 19),
+        cvv2: Math.floor(Math.random() * 900 + 100).toString(),
+        expireDate: '12/2028',
+        occupation: '高级软件工程师',
+        companyName: '极客创新科技有限公司',
+        companySize: '51-200 人',
+        employmentStatus: '全职工作',
+        monthlySalary: '¥28,500',
+        ssn: '无',
+        idCardCn,
       };
     }
   };
 
   const regenerate = () => {
-    const list: MockIdentity[] = [];
-    for (let i = 0; i < count; i++) {
-      list.push(generateIdentity(country));
-    }
-    setRecords(list);
+    const data = generateSingleIdentity();
+    setIdentity(data);
   };
 
   useEffect(() => {
     regenerate();
-  }, [country, count]);
+  }, [targetCountry, selectedStateCode]);
 
-  const copyVal = (val: string, label: string) => {
+  const copyField = (val: string, keyName: string) => {
     navigator.clipboard.writeText(val);
-    toast(`已复制 ${label}: ${val}`, 'success');
+    setCopiedKey(keyName);
+    toast(`已复制 ${keyName}: ${val}`, 'success');
+    setTimeout(() => setCopiedKey(null), 1500);
+  };
+
+  const copyAll = () => {
+    if (!identity) return;
+    const formatted = `
+【基本资料】
+全名: ${identity.fullName}
+性别: ${identity.gender}
+生日: ${identity.birthDate}
+Title: ${identity.title}
+头发颜色: ${identity.hairColor}
+
+【地址信息】
+街道: ${identity.street}
+区县: ${identity.county}
+城市: ${identity.city}
+州代码: ${identity.state}
+州全称: ${identity.stateName}
+邮编: ${identity.zipCode}
+电话号码: ${identity.phone}
+临时邮箱: ${identity.tempEmail}
+
+【就业 & 信用卡】
+信用卡类型: ${identity.cardType}
+信用卡号: ${identity.cardNumber}
+CVV2: ${identity.cvv2}
+过期时间: ${identity.expireDate}
+职业: ${identity.occupation}
+公司名称: ${identity.companyName}
+公司规模: ${identity.companySize}
+就业状态: ${identity.employmentStatus}
+月薪: ${identity.monthlySalary}
+社会保障号 (SSN): ${identity.ssn}
+${identity.idCardCn ? `身份证号: ${identity.idCardCn}` : ''}
+    `.trim();
+
+    navigator.clipboard.writeText(formatted);
+    toast('已复制完整身份档案到剪贴板', 'success');
   };
 
   const exportJson = () => {
-    const json = JSON.stringify(records, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    if (!identity) return;
+    const blob = new Blob([JSON.stringify(identity, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mock_identities_${country}_${Date.now()}.json`;
+    a.download = `identity_${identity.fullName.replace(/\s+/g, '_')}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast('已导出 JSON 文件', 'success');
+    toast('已导出身份 JSON', 'success');
   };
 
   const exportCsv = () => {
-    const headers = ['Country', 'Name', 'Gender', 'Age', 'BirthDate', 'ID_Number', 'Phone', 'Email', 'Address', 'City', 'State', 'Zip'];
-    const rows = records.map((r) => [
-      r.country,
-      `"${r.fullName}"`,
-      r.gender,
-      r.age,
-      r.birthDate,
-      `"${r.idNumber}"`,
-      `"${r.phone}"`,
-      r.email,
-      `"${r.address}"`,
-      `"${r.city}"`,
-      `"${r.state}"`,
-      r.zipCode,
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    if (!identity) return;
+    const headers = Object.keys(identity).join(',');
+    const values = Object.values(identity)
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(',');
+    const blob = new Blob(['\uFEFF' + headers + '\n' + values], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mock_identities_${country}_${Date.now()}.csv`;
+    a.download = `identity_${identity.fullName.replace(/\s+/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast('已导出 CSV 文件', 'success');
+    toast('已导出 CSV 表格', 'success');
+  };
+
+  const renderRow = (label: string, value: string, keyName: string, isLinkToMail = false) => {
+    const isCopied = copiedKey === keyName;
+    return (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '140px 1fr 60px',
+          alignItems: 'center',
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border-color)',
+          fontSize: '0.875rem',
+        }}
+      >
+        <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <span
+            style={{
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              fontFamily: ['卡号', '邮编', '电话', 'SSN', '生日', 'CVV2'].some((k) => label.includes(k))
+                ? 'var(--font-mono)'
+                : 'inherit',
+              wordBreak: 'break-word',
+            }}
+          >
+            {value}
+          </span>
+          {isLinkToMail && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                (已就绪，
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTempMail?.(value)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--accent-primary)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  点击联动接收邮件
+                </button>
+                )
+              </span>
+            </div>
+          )}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <button
+            className="btn-ghost"
+            style={{ padding: '4px 8px', borderRadius: '4px', color: isCopied ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
+            onClick={() => copyField(value, label)}
+            title="点击复制"
+          >
+            {isCopied ? <Check size={14} /> : <Copy size={14} />}
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Notice Banner */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Top Filter and Actions Bar */}
       <div
+        className="glass-panel"
         style={{
+          padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          padding: '12px 18px',
-          background: 'rgba(245, 158, 11, 0.08)',
-          border: '1px solid rgba(245, 158, 11, 0.25)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--accent-amber)',
-          fontSize: '0.8125rem',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
         }}
       >
-        <ShieldAlert size={18} />
-        <span>
-          <strong>测试数据免责声明：</strong>所有身份证号/SSN号、姓名与地址均为程序算法随机生成的虚拟测试数据，仅供软件开发、API自动化测试与表单验证使用，严禁用于违法违规用途。
-        </span>
-      </div>
+        {/* Country & State Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>地区:</span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                className={`btn ${targetCountry === 'US' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
+                onClick={() => setTargetCountry('US')}
+              >
+                🇺🇸 美国 (默认)
+              </button>
+              <button
+                className={`btn ${targetCountry === 'CN' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
+                onClick={() => setTargetCountry('CN')}
+              >
+                🇨🇳 中国
+              </button>
+            </div>
+          </div>
 
-      {/* Control Bar */}
-      <div className="glass-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>目标地区:</span>
-          <button
-            className={`btn ${country === 'CN' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setCountry('CN')}
-          >
-            🇨🇳 中国 (真实校验位/真实邮编)
-          </button>
-          <button
-            className={`btn ${country === 'US' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setCountry('US')}
-          >
-            🇺🇸 美国 (真实州县/ZIP格式/SSN)
-          </button>
+          {targetCountry === 'US' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>选择州 (State):</span>
+              <select
+                className="select-box"
+                style={{ width: '180px', padding: '6px 10px', fontSize: '0.8125rem' }}
+                value={selectedStateCode}
+                onChange={(e) => setSelectedStateCode(e.target.value)}
+              >
+                <option value="ALL">全美随机 (All States)</option>
+                <option value="TX">德克萨斯州 Texas (TX)</option>
+                <option value="CA">加利福尼亚州 California (CA)</option>
+                <option value="NY">纽约州 New York (NY)</option>
+                <option value="FL">佛罗里达州 Florida (FL)</option>
+                <option value="WA">华盛顿州 Washington (WA)</option>
+                <option value="IL">伊利诺伊州 Illinois (IL)</option>
+              </select>
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <select
-            className="select-box"
-            style={{ width: '100px', padding: '6px 10px', fontSize: '0.8125rem' }}
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-          >
-            <option value={3}>3 条</option>
-            <option value={5}>5 条</option>
-            <option value={10}>10 条</option>
-            <option value={20}>20 条</option>
-          </select>
-
-          <button className="btn btn-primary" onClick={regenerate}>
-            <RefreshCw size={15} /> 重新生成
+        {/* Global Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="btn btn-secondary" onClick={copyAll}>
+            <Copy size={15} /> 复制全部档案
           </button>
           <button className="btn btn-secondary" onClick={exportJson}>
             <FileJson size={15} /> 导出 JSON
@@ -275,94 +631,97 @@ export const IdentityTool: React.FC = () => {
           <button className="btn btn-secondary" onClick={exportCsv}>
             <FileSpreadsheet size={15} /> 导出 CSV
           </button>
+          <button className="btn btn-primary" onClick={regenerate}>
+            <RefreshCw size={15} /> 随机换一个
+          </button>
         </div>
       </div>
 
-      {/* Cards List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {records.map((r, idx) => (
-          <div
-            key={r.id}
-            className="glass-panel"
-            style={{
-              padding: '20px 24px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
-              position: 'relative',
-            }}
-          >
-            <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '8px' }}>
-              <span className="badge badge-primary">#{idx + 1}</span>
+      {identity && (
+        <div
+          className="glass-panel"
+          style={{
+            padding: 0,
+            overflow: 'hidden',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-secondary)',
+          }}
+        >
+          {/* Section 1: 基本资料 */}
+          <div>
+            <div
+              style={{
+                padding: '12px 18px',
+                background: 'rgba(99, 102, 241, 0.08)',
+                borderBottom: '1px solid var(--border-color)',
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                color: 'var(--accent-primary)',
+              }}
+            >
+              基本资料
             </div>
-
-            {/* Name & Gender */}
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>姓名 / 性别 / 年龄</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {r.fullName}
-                </span>
-                <span className="badge badge-emerald">{r.gender}</span>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{r.age} 岁</span>
-                <button className="btn-ghost" style={{ padding: '2px 4px' }} onClick={() => copyVal(r.fullName, '姓名')}>
-                  <Copy size={13} />
-                </button>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                出生日期: {r.birthDate}
-              </div>
-            </div>
-
-            {/* ID Number */}
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {country === 'CN' ? '身份证号 (ISO 7064校验)' : 'SSN 虚拟号码'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9375rem', fontWeight: 600, color: 'var(--accent-cyan)' }}>
-                  {r.idNumber}
-                </span>
-                <button className="btn-ghost" style={{ padding: '2px 4px' }} onClick={() => copyVal(r.idNumber, '证件号')}>
-                  <Copy size={13} />
-                </button>
-              </div>
-            </div>
-
-            {/* Phone & Email */}
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>虚拟手机 / 邮箱</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>{r.phone}</span>
-                <button className="btn-ghost" style={{ padding: '2px 4px' }} onClick={() => copyVal(r.phone, '手机号')}>
-                  <Copy size={13} />
-                </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.email}</span>
-                <button className="btn-ghost" style={{ padding: '2px 4px' }} onClick={() => copyVal(r.email, '邮箱')}>
-                  <Copy size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div style={{ gridColumn: 'span 2' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>详细地址与邮编</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <MapPin size={14} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', wordBreak: 'break-all' }}>
-                  {r.address}
-                </span>
-                <span className="badge badge-cyan" style={{ marginLeft: '4px' }}>ZIP: {r.zipCode}</span>
-                <button className="btn-ghost" style={{ padding: '2px 4px' }} onClick={() => copyVal(`${r.address} (邮编: ${r.zipCode})`, '完整地址')}>
-                  <Copy size={13} />
-                </button>
-              </div>
-            </div>
+            {renderRow('全名', identity.fullName, '全名')}
+            {renderRow('性别', identity.gender, '性别')}
+            {renderRow('生日', identity.birthDate, '生日')}
+            {renderRow('Title', identity.title, 'Title')}
+            {renderRow('头发颜色', identity.hairColor, '头发颜色')}
           </div>
-        ))}
-      </div>
+
+          {/* Section 2: 地址 */}
+          <div>
+            <div
+              style={{
+                padding: '12px 18px',
+                background: 'rgba(6, 182, 212, 0.08)',
+                borderTop: '1px solid var(--border-color)',
+                borderBottom: '1px solid var(--border-color)',
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                color: 'var(--accent-cyan)',
+              }}
+            >
+              地址
+            </div>
+            {renderRow('街道', identity.street, '街道')}
+            {renderRow('区县', identity.county, '区县')}
+            {renderRow('城市', identity.city, '城市')}
+            {renderRow('州', identity.state, '州')}
+            {renderRow('州全称', identity.stateName, '州全称')}
+            {renderRow('邮编', identity.zipCode, '邮编')}
+            {renderRow('电话号码', identity.phone, '电话号码')}
+            {renderRow('临时邮箱', identity.tempEmail, '临时邮箱', true)}
+          </div>
+
+          {/* Section 3: 就业 & 信用卡 */}
+          <div>
+            <div
+              style={{
+                padding: '12px 18px',
+                background: 'rgba(16, 185, 129, 0.08)',
+                borderTop: '1px solid var(--border-color)',
+                borderBottom: '1px solid var(--border-color)',
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                color: 'var(--accent-emerald)',
+              }}
+            >
+              就业 & 信用卡
+            </div>
+            {renderRow('信用卡类型', identity.cardType, '信用卡类型')}
+            {renderRow('信用卡号', identity.cardNumber, '信用卡号')}
+            {renderRow('CVV2', identity.cvv2, 'CVV2')}
+            {renderRow('过期时间', identity.expireDate, '过期时间')}
+            {renderRow('职业', identity.occupation, '职业')}
+            {renderRow('公司名称', identity.companyName, '公司名称')}
+            {renderRow('公司规模', identity.companySize, '公司规模')}
+            {renderRow('就业状态', identity.employmentStatus, '就业状态')}
+            {renderRow('月薪', identity.monthlySalary, '月薪')}
+            {renderRow('社会保障号', identity.ssn, '社会保障号')}
+            {identity.idCardCn && renderRow('身份证号 (ISO 7064)', identity.idCardCn, '身份证号')}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
