@@ -45,7 +45,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     id: 'password-generator',
-    name: '密码发生器',
+    name: '密码生成器',
     nameEn: 'Password Studio',
     category: 'security',
     iconName: 'Lock',
