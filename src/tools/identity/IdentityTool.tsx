@@ -551,8 +551,10 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
     const monthlySalary = `${currentCountry.currencySymbol}${salaryVal}`;
 
     // Temp email
-    const emailPrefix = `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${Math.random().toString(36).substring(2, 6)}`;
+    const emailPrefix = `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 14)}_${Math.random().toString(36).substring(2, 6)}`;
     const tempEmail = TempMailService.generateRandomAddress(emailPrefix);
+    // 后台异步向 Cloudflare 临时邮箱后端注册该地址并缓存 JWT 凭据
+    TempMailService.createRemoteAddress(emailPrefix).catch(() => {});
 
     return {
       id: Math.random().toString(36).substring(2, 9),

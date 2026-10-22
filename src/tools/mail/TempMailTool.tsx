@@ -46,18 +46,32 @@ export const TempMailTool: React.FC<TempMailToolProps> = ({ initialEmail }) => {
     toast(`已复制 ${label}: ${text}`, 'success');
   };
 
-  const handleGenerateNew = () => {
-    const newAddr = TempMailService.generateRandomAddress();
-    setEmail(newAddr);
-    toast(`已生成新临时邮箱: ${newAddr}`, 'success');
+  const handleGenerateNew = async () => {
+    setIsLoading(true);
+    try {
+      const newAddr = await TempMailService.createRemoteAddress();
+      setEmail(newAddr);
+      toast(`已生成新临时邮箱: ${newAddr}`, 'success');
+    } catch {
+      toast('生成邮箱失败，已使用本地兜底', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCustomPrefix = () => {
+  const handleCustomPrefix = async () => {
     if (!customPrefix.trim()) return;
-    const newAddr = TempMailService.generateRandomAddress(customPrefix.trim());
-    setEmail(newAddr);
-    setCustomPrefix('');
-    toast(`已设置自定义邮箱: ${newAddr}`, 'success');
+    setIsLoading(true);
+    try {
+      const newAddr = await TempMailService.createRemoteAddress(customPrefix.trim());
+      setEmail(newAddr);
+      setCustomPrefix('');
+      toast(`已设置自定义邮箱: ${newAddr}`, 'success');
+    } catch {
+      toast('设置邮箱失败', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveConfig = () => {
