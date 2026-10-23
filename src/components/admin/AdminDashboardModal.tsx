@@ -105,7 +105,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>管理员控制中心</h3>
                 <span className="badge badge-emerald" style={{ fontSize: '0.6875rem' }}>
-                  SuperAdmin: world
+                  {AuthService.isSuperAdmin() ? '👑 超级管理员' : '🛡️ 管理员'}
                 </span>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>

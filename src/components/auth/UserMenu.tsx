@@ -8,7 +8,11 @@ import { UserProfileModal } from '../user/UserProfileModal';
 import { AdminDashboardModal } from '../admin/AdminDashboardModal';
 import type { User } from '../../types/user';
 
-export const UserMenu: React.FC = () => {
+interface UserMenuProps {
+  onNavigateToSuperAdmin?: () => void;
+}
+
+export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) => {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(() => AuthService.getCurrentUser());
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -56,6 +60,9 @@ export const UserMenu: React.FC = () => {
     setIsDropdownOpen(false);
   };
 
+  const isSuper = AuthService.isSuperAdmin(user);
+  const isRegularAdmin = AuthService.isAdmin(user) && !isSuper;
+
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
       {!user ? (
@@ -82,7 +89,11 @@ export const UserMenu: React.FC = () => {
               gap: '8px',
               borderRadius: 'var(--radius-full)',
               background: 'var(--bg-elevated)',
-              borderColor: user.role === 'admin' ? 'rgba(99, 102, 241, 0.4)' : 'var(--border-color)',
+              borderColor: isSuper
+                ? 'rgba(168, 85, 247, 0.5)'
+                : isRegularAdmin
+                ? 'rgba(99, 102, 241, 0.4)'
+                : 'var(--border-color)',
             }}
             onClick={() => setIsDropdownOpen((prev) => !prev)}
           >
@@ -94,7 +105,20 @@ export const UserMenu: React.FC = () => {
             <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {user.username}
             </span>
-            {user.role === 'admin' ? (
+            {isSuper ? (
+              <span
+                className="badge"
+                style={{
+                  padding: '1px 6px',
+                  fontSize: '0.625rem',
+                  background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                  color: '#fff',
+                  fontWeight: 700,
+                }}
+              >
+                👑 SUPER
+              </span>
+            ) : isRegularAdmin ? (
               <span className="badge badge-emerald" style={{ padding: '1px 5px', fontSize: '0.625rem' }}>
                 ADMIN
               </span>
@@ -195,8 +219,33 @@ export const UserMenu: React.FC = () => {
                 <span>我的密码保险箱</span>
               </button>
 
-              {/* Admin console trigger */}
-              {user.role === 'admin' && (
+              {/* 仅超级管理员可看到的专属后台入口 */}
+              {isSuper && (
+                <button
+                  className="btn-ghost"
+                  style={{
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                    padding: '8px 10px',
+                    fontSize: '0.8125rem',
+                    borderRadius: '4px',
+                    gap: '8px',
+                    color: '#a855f7',
+                    background: 'rgba(168, 85, 247, 0.12)',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onNavigateToSuperAdmin?.();
+                  }}
+                >
+                  <Shield size={15} color="#a855f7" />
+                  <span>👑 超级管理员后台</span>
+                </button>
+              )}
+
+              {/* 管理员工作台 (超级管理员与普通管理员均可查看日常审计与备份) */}
+              {(isSuper || isRegularAdmin) && (
                 <button
                   className="btn-ghost"
                   style={{
@@ -215,7 +264,7 @@ export const UserMenu: React.FC = () => {
                   }}
                 >
                   <Shield size={15} />
-                  <span>👑 管理员控制台</span>
+                  <span>🛡️ 管理员审计控制台</span>
                 </button>
               )}
 

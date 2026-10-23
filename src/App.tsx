@@ -18,6 +18,7 @@ import { PdfTool } from './tools/pdf/PdfTool';
 import { ImageTool } from './tools/image/ImageTool';
 import { ExcelTool } from './tools/excel/ExcelTool';
 import { TempMailTool } from './tools/mail/TempMailTool';
+import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
 
 export const AppContent: React.FC = () => {
   const [currentToolId, setCurrentToolId] = useState<string | null>(null);
@@ -85,10 +86,15 @@ export const AppContent: React.FC = () => {
       />
 
       <div className="app-main">
-        <Header onOpenSearch={() => setIsSearchOpen(true)} />
+        <Header
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onNavigateToSuperAdmin={() => setCurrentToolId('super-admin-panel')}
+        />
 
         <main className="app-content">
-          {activeTool ? (
+          {currentToolId === 'super-admin-panel' ? (
+            <SuperAdminDashboard onBack={() => setCurrentToolId(null)} />
+          ) : activeTool ? (
             /* Active Tool View */
             <div className="tool-view-wrapper">
               <div className="tool-view-header">

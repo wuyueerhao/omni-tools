@@ -1,16 +1,17 @@
-import type { User, UserAccountCredentials, AuthProvider, AuditLog } from '../types/user';
+import type { User, UserAccountCredentials, AuthProvider, AuditLog, UserRole } from '../types/user';
+import { SystemConfigService } from './systemConfigService';
 
 const ACCOUNTS_KEY = 'omni_auth_accounts_v1';
 const CURRENT_USER_KEY = 'omni_auth_current_user_v1';
 const AUDIT_LOGS_KEY = 'omni_auth_audit_logs_v1';
 
-// 默认管理员配置
-const DEFAULT_ADMIN: UserAccountCredentials = {
+// 默认超级管理员配置 (初始密码为用户指定的 dl0101)
+const DEFAULT_SUPER_ADMIN: UserAccountCredentials = {
   id: 'usr_admin_world_001',
   username: 'world',
   email: 'world@vnvnv.com',
-  passwordHash: 'dl0101', // 支持直接校验 dl0101
-  role: 'admin',
+  passwordHash: 'dl0101',
+  role: 'super_admin', // 超级管理员
   avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=world&backgroundColor=6366f1',
   provider: 'local',
   createdAt: '2026-10-22 08:00:00',
@@ -29,15 +30,28 @@ class AuthServiceClass {
     try {
       const raw = localStorage.getItem(ACCOUNTS_KEY);
       if (!raw) {
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify([DEFAULT_ADMIN]));
-        this.addAuditLog('初始化系统，创建默认管理员 (world)', 'world', 'success');
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify([DEFAULT_SUPER_ADMIN]));
+        this.addAuditLog('初始化系统，创建默认超级管理员 (world)', 'world', 'success');
       } else {
         const accounts: UserAccountCredentials[] = JSON.parse(raw);
-        // 确保 world 管理员始终存在且密码正确
-        const hasWorld = accounts.some((a) => a.username.toLowerCase() === 'world');
-        if (!hasWorld) {
-          accounts.unshift(DEFAULT_ADMIN);
+        // 确保 world 超级管理员始终存在且角色升级为 super_admin
+        const worldIndex = accounts.findIndex((a) => a.username.toLowerCase() === 'world');
+        if (worldIndex === -1) {
+          accounts.unshift(DEFAULT_SUPER_ADMIN);
           localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+        } else if (accounts[worldIndex].role !== 'super_admin') {
+          accounts[worldIndex].role = 'super_admin';
+          localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+        }
+      }
+
+      // 如果当前登录的用户是 world，确保会话角色同步升级为 super_admin
+      const currentRaw = localStorage.getItem(CURRENT_USER_KEY);
+      if (currentRaw) {
+        const currentUser: User = JSON.parse(currentRaw);
+        if (currentUser.username.toLowerCase() === 'world' && currentUser.role !== 'super_admin') {
+          currentUser.role = 'super_admin';
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
         }
       }
     } catch (e) {
@@ -64,10 +78,28 @@ class AuthServiceClass {
   public getCurrentUser(): User | null {
     try {
       const raw = localStorage.getItem(CURRENT_USER_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const user: User = JSON.parse(raw);
+      if (user.username.toLowerCase() === 'world' && user.role !== 'super_admin') {
+        user.role = 'super_admin';
+      }
+      return user;
     } catch {
       return null;
     }
+  }
+
+  public isSuperAdmin(user?: User | null): boolean {
+    const target = user !== undefined ? user : this.getCurrentUser();
+    return Boolean(target && (target.role === 'super_admin' || target.username.toLowerCase() === 'world'));
+  }
+
+  public isAdmin(user?: User | null): boolean {
+    const target = user !== undefined ? user : this.getCurrentUser();
+    return Boolean(
+      target &&
+        (target.role === 'super_admin' || target.role === 'admin' || target.username.toLowerCase() === 'world')
+    );
   }
 
   public async login(identifier: string, password: string): Promise<User> {
@@ -89,11 +121,13 @@ class AuthServiceClass {
       throw new Error('密码错误，请重试');
     }
 
+    const effectiveRole: UserRole = account.username.toLowerCase() === 'world' ? 'super_admin' : account.role;
+
     const user: User = {
       id: account.id,
       username: account.username,
       email: account.email,
-      role: account.role,
+      role: effectiveRole,
       avatar: account.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${account.username}`,
       provider: account.provider,
       createdAt: account.createdAt,
@@ -108,6 +142,12 @@ class AuthServiceClass {
 
   public async register(username: string, email: string, password: string): Promise<User> {
     this.ensureInitialized();
+
+    // 检查超级管理员系统策略：是否开放自助注册
+    if (!SystemConfigService.isRegistrationAllowed()) {
+      throw new Error('系统当前已暂停新用户开放注册，请联系超级管理员');
+    }
+
     const cleanUsername = username.trim();
     const cleanEmail = email.trim().toLowerCase();
 
@@ -164,7 +204,6 @@ class AuthServiceClass {
     this.ensureInitialized();
     const accounts = this.getAccounts();
 
-    // 针对 Google / Facebook / GitHub 生成真实仿真第三方授权账号
     const providerNames: Record<AuthProvider, string> = {
       google: 'Google',
       facebook: 'Facebook',
@@ -221,32 +260,75 @@ class AuthServiceClass {
   public getAccounts(): UserAccountCredentials[] {
     try {
       const raw = localStorage.getItem(ACCOUNTS_KEY);
-      return raw ? JSON.parse(raw) : [DEFAULT_ADMIN];
+      return raw ? JSON.parse(raw) : [DEFAULT_SUPER_ADMIN];
     } catch {
-      return [DEFAULT_ADMIN];
+      return [DEFAULT_SUPER_ADMIN];
     }
   }
 
-  public adminResetPassword(userId: string, newPass: string) {
+  /**
+   * 仅超级管理员可调整用户权限 (升级管理员 / 设为超级管理员 / 降为普通用户)
+   */
+  public adminSetUserRole(userId: string, newRole: UserRole, operator?: User) {
+    if (operator && !this.isSuperAdmin(operator)) {
+      throw new Error('权限不足：仅系统超级管理员 (Super Admin) 可变更用户角色');
+    }
+
+    const accounts = this.getAccounts();
+    const target = accounts.find((a) => a.id === userId);
+    if (!target) throw new Error('用户不存在');
+
+    if (target.username.toLowerCase() === 'world' && newRole !== 'super_admin') {
+      throw new Error('不能撤销初始超级管理员 world 的超管权限');
+    }
+
+    const oldRole = target.role;
+    target.role = newRole;
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+
+    // 如果修改的是当前登录用户，同步更新当前会话
+    const current = this.getCurrentUser();
+    if (current && current.id === userId) {
+      current.role = newRole;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(current));
+    }
+
+    this.addAuditLog(
+      `超级管理员变更了用户 [${target.username}] 的角色: ${oldRole} -> ${newRole}`,
+      operator?.username || 'world',
+      'warning'
+    );
+    this.notify();
+  }
+
+  public adminResetPassword(userId: string, newPass: string, operator?: User) {
     const accounts = this.getAccounts();
     const target = accounts.find((a) => a.id === userId);
     if (target) {
       target.passwordHash = newPass;
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-      this.addAuditLog(`管理员重置了用户 [${target.username}] 的密码`, 'world', 'warning');
+      this.addAuditLog(
+        `管理员重置了用户 [${target.username}] 的密码`,
+        operator?.username || 'world',
+        'warning'
+      );
     }
   }
 
-  public adminDeleteUser(userId: string) {
+  public adminDeleteUser(userId: string, operator?: User) {
     let accounts = this.getAccounts();
     const target = accounts.find((a) => a.id === userId);
-    if (target && target.username === 'world') {
+    if (target && target.username.toLowerCase() === 'world') {
       throw new Error('不能删除超级管理员账号 world');
     }
     accounts = accounts.filter((a) => a.id !== userId);
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
     if (target) {
-      this.addAuditLog(`管理员删除了用户 [${target.username}]`, 'world', 'warning');
+      this.addAuditLog(
+        `管理员删除了用户 [${target.username}]`,
+        operator?.username || 'world',
+        'warning'
+      );
     }
   }
 
@@ -259,6 +341,14 @@ class AuthServiceClass {
     }
   }
 
+  public clearAuditLogs(operator?: User) {
+    if (operator && !this.isSuperAdmin(operator)) {
+      throw new Error('仅超级管理员可清空系统审计日志');
+    }
+    localStorage.setItem(AUDIT_LOGS_KEY, JSON.stringify([]));
+    this.addAuditLog('超级管理员清空了历史审计日志', operator?.username || 'world', 'warning');
+  }
+
   public addAuditLog(action: string, username = '访客', status: 'success' | 'warning' | 'error' = 'success') {
     try {
       const logs = this.getAuditLogs();
@@ -269,8 +359,7 @@ class AuthServiceClass {
         action,
         status,
       });
-      // 保持最近 100 条
-      if (logs.length > 100) logs.length = 100;
+      if (logs.length > 150) logs.length = 150;
       localStorage.setItem(AUDIT_LOGS_KEY, JSON.stringify(logs));
     } catch {
       // ignore

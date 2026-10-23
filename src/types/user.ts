@@ -2,7 +2,7 @@
  * 用户管理与云端同步核心类型定义
  */
 
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'super_admin' | 'admin' | 'user';
 export type AuthProvider = 'local' | 'google' | 'facebook' | 'github';
 
 export interface User {

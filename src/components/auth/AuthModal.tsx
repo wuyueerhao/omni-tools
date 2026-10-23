@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Lock, User as UserIcon, Mail, Shield, Sparkles } from 'lucide-react';
+import { X, Lock, User as UserIcon, Mail, Shield, Sparkles, AlertTriangle } from 'lucide-react';
 import { AuthService } from '../../services/authService';
+import { SystemConfigService } from '../../services/systemConfigService';
 import { useToast } from '../common/Toast';
 import type { AuthProvider } from '../../types/user';
 
@@ -231,7 +232,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '6px' }} disabled={isLoading}>
+            {!SystemConfigService.isRegistrationAllowed() && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 12px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--accent-rose)',
+                  fontSize: '0.75rem',
+                }}
+              >
+                <AlertTriangle size={16} />
+                <span>系统已暂停新用户开放注册，请联系管理员</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ marginTop: '6px' }}
+              disabled={isLoading || !SystemConfigService.isRegistrationAllowed()}
+            >
               {isLoading ? '注册中...' : '注册并自动登录'}
             </button>
           </form>

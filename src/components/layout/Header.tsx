@@ -4,9 +4,10 @@ import { UserMenu } from '../auth/UserMenu';
 
 interface HeaderProps {
   onOpenSearch: () => void;
+  onNavigateToSuperAdmin?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateToSuperAdmin }) => {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('omni_theme') as 'dark' | 'light') || 'dark';
   });
@@ -66,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
         </a>
 
         {/* User Management System Menu */}
-        <UserMenu />
+        <UserMenu onNavigateToSuperAdmin={onNavigateToSuperAdmin} />
       </div>
     </header>
   );
