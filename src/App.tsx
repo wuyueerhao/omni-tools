@@ -19,24 +19,145 @@ import { ImageTool } from './tools/image/ImageTool';
 import { ExcelTool } from './tools/excel/ExcelTool';
 import { TempMailTool } from './tools/mail/TempMailTool';
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
+import { AuthService } from './services/authService';
+
+const SESSION_TOOL_KEY = 'omni_session_active_tool_v1';
+const SESSION_CATEGORY_KEY = 'omni_session_category_v1';
+const SESSION_HARD_RESET_KEY = 'omni_session_hard_reset_v1';
+const SESSION_LINKED_EMAIL_KEY = 'omni_session_linked_email_v1';
+
+// 计算初始化菜单位置：刷新时保留上次位置；重新打开或强制刷新时回到默认控制台
+const getInitialNavState = (): {
+  toolId: string | null;
+  category: ToolCategory | 'all';
+  linkedEmail?: string;
+} => {
+  try {
+    // 1. 检查是否有强制刷新重置标记 (由 Cmd+Shift+R / Ctrl+Shift+R / Shift+F5 / Shift+点击刷新 触发)
+    if (sessionStorage.getItem(SESSION_HARD_RESET_KEY) === 'true') {
+      sessionStorage.removeItem(SESSION_HARD_RESET_KEY);
+      sessionStorage.removeItem(SESSION_TOOL_KEY);
+      sessionStorage.removeItem(SESSION_CATEGORY_KEY);
+      sessionStorage.removeItem(SESSION_LINKED_EMAIL_KEY);
+      return { toolId: null, category: 'all' };
+    }
+
+    // 2. 读取当前页面 Session 中记录的工具与分类
+    // 重新打开（新标签页、关闭后重新打开）时，sessionStorage 为空，自然回到默认首页控制台；
+    // 正常刷新时，sessionStorage 会保留上一次使用的菜单工具，自动恢复至该工具。
+    const savedTool = sessionStorage.getItem(SESSION_TOOL_KEY);
+    const savedCategory = sessionStorage.getItem(SESSION_CATEGORY_KEY) as (ToolCategory | 'all') | null;
+    const savedEmail = sessionStorage.getItem(SESSION_LINKED_EMAIL_KEY) || undefined;
+
+    let validToolId: string | null = null;
+    if (savedTool === 'super-admin-panel') {
+      validToolId = AuthService.isSuperAdmin() ? 'super-admin-panel' : null;
+    } else if (savedTool && TOOLS.some((t) => t.id === savedTool)) {
+      validToolId = savedTool;
+    }
+
+    const validCategory: ToolCategory | 'all' =
+      savedCategory && (savedCategory === 'all' || CATEGORIES.some((c) => c.id === savedCategory))
+        ? savedCategory
+        : 'all';
+
+    return {
+      toolId: validToolId,
+      category: validCategory,
+      linkedEmail: savedEmail,
+    };
+  } catch {
+    return { toolId: null, category: 'all' };
+  }
+};
 
 export const AppContent: React.FC = () => {
-  const [currentToolId, setCurrentToolId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<ToolCategory | 'all'>('all');
+  const [initialNav] = useState(() => getInitialNavState());
+  const [currentToolId, setCurrentToolId] = useState<string | null>(initialNav.toolId);
+  const [selectedCategory, setSelectedCategory] = useState<ToolCategory | 'all'>(initialNav.category);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [linkedEmail, setLinkedEmail] = useState<string | undefined>(undefined);
+  const [linkedEmail, setLinkedEmail] = useState<string | undefined>(initialNav.linkedEmail);
 
-  // Global Keyboard shortcut: Cmd+K / Ctrl+K
+  // 监听键盘强制刷新快捷键 (Ctrl+F5, Shift+F5, Ctrl+Shift+R, Cmd+Shift+R)
+  // 以及监听 Shift 键状态（应对 Shift + 点击浏览器刷新按钮）
   useEffect(() => {
+    let isShiftHeld = false;
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        isShiftHeld = true;
+      }
+
+      // 全局搜索快捷键: Cmd+K / Ctrl+K
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsSearchOpen((prev) => !prev);
       }
+
+      // 检测强制刷新按键组合
+      const isR = e.key === 'r' || e.key === 'R';
+      const isF5 = e.key === 'F5' || e.keyCode === 116;
+      if (
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && isR) ||
+        (e.shiftKey && isF5) ||
+        (e.ctrlKey && isF5)
+      ) {
+        try {
+          sessionStorage.setItem(SESSION_HARD_RESET_KEY, 'true');
+          sessionStorage.removeItem(SESSION_TOOL_KEY);
+          sessionStorage.removeItem(SESSION_CATEGORY_KEY);
+          sessionStorage.removeItem(SESSION_LINKED_EMAIL_KEY);
+        } catch {}
+      }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        isShiftHeld = false;
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      if (isShiftHeld) {
+        try {
+          sessionStorage.setItem(SESSION_HARD_RESET_KEY, 'true');
+          sessionStorage.removeItem(SESSION_TOOL_KEY);
+          sessionStorage.removeItem(SESSION_CATEGORY_KEY);
+          sessionStorage.removeItem(SESSION_LINKED_EMAIL_KEY);
+        } catch {}
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener('keyup', handleKeyUp, { capture: true });
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener('keyup', handleKeyUp, { capture: true });
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
+
+  const handleSelectTool = (id: string | null) => {
+    setCurrentToolId(id);
+    try {
+      if (id) {
+        sessionStorage.setItem(SESSION_TOOL_KEY, id);
+      } else {
+        sessionStorage.removeItem(SESSION_TOOL_KEY);
+        sessionStorage.removeItem(SESSION_LINKED_EMAIL_KEY);
+      }
+    } catch {}
+  };
+
+  const handleSelectCategory = (cat: ToolCategory | 'all') => {
+    setSelectedCategory(cat);
+    handleSelectTool(null);
+    try {
+      sessionStorage.setItem(SESSION_CATEGORY_KEY, cat);
+    } catch {}
+  };
 
   const activeTool = TOOLS.find((t) => t.id === currentToolId);
 
@@ -47,7 +168,12 @@ export const AppContent: React.FC = () => {
 
   const handleNavigateToMail = (email: string) => {
     setLinkedEmail(email);
-    setCurrentToolId('temp-mail');
+    handleSelectTool('temp-mail');
+    try {
+      if (email) {
+        sessionStorage.setItem(SESSION_LINKED_EMAIL_KEY, email);
+      }
+    } catch {}
   };
 
   const renderActiveToolView = (tool: ToolDefinition) => {
@@ -78,22 +204,19 @@ export const AppContent: React.FC = () => {
       <Sidebar
         currentToolId={currentToolId}
         selectedCategory={selectedCategory}
-        onSelectCategory={(cat) => {
-          setSelectedCategory(cat);
-          setCurrentToolId(null);
-        }}
-        onSelectTool={(id) => setCurrentToolId(id)}
+        onSelectCategory={handleSelectCategory}
+        onSelectTool={handleSelectTool}
       />
 
       <div className="app-main">
         <Header
           onOpenSearch={() => setIsSearchOpen(true)}
-          onNavigateToSuperAdmin={() => setCurrentToolId('super-admin-panel')}
+          onNavigateToSuperAdmin={() => handleSelectTool('super-admin-panel')}
         />
 
         <main className="app-content">
           {currentToolId === 'super-admin-panel' ? (
-            <SuperAdminDashboard onBack={() => setCurrentToolId(null)} />
+            <SuperAdminDashboard onBack={() => handleSelectTool(null)} />
           ) : activeTool ? (
             /* Active Tool View */
             <div className="tool-view-wrapper">
@@ -102,7 +225,7 @@ export const AppContent: React.FC = () => {
                   <button
                     className="btn btn-secondary"
                     style={{ padding: '8px 12px' }}
-                    onClick={() => setCurrentToolId(null)}
+                    onClick={() => handleSelectTool(null)}
                   >
                     <ArrowLeft size={16} /> 返回仪表盘
                   </button>
@@ -157,7 +280,7 @@ export const AppContent: React.FC = () => {
               <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button
                   className={`btn ${selectedCategory === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={() => handleSelectCategory('all')}
                 >
                   全部工具 ({TOOLS.length})
                 </button>
@@ -165,7 +288,7 @@ export const AppContent: React.FC = () => {
                   <button
                     key={cat.id}
                     className={`btn ${selectedCategory === cat.id ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => handleSelectCategory(cat.id)}
                   >
                     <DynamicIcon name={cat.iconName} size={15} />
                     <span>{cat.name}</span>
@@ -179,7 +302,7 @@ export const AppContent: React.FC = () => {
                   <ToolCard
                     key={tool.id}
                     tool={tool}
-                    onClick={() => setCurrentToolId(tool.id)}
+                    onClick={() => handleSelectTool(tool.id)}
                   />
                 ))}
               </div>
@@ -193,7 +316,7 @@ export const AppContent: React.FC = () => {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectTool={(id) => {
-          setCurrentToolId(id);
+          handleSelectTool(id);
           setIsSearchOpen(false);
         }}
       />
