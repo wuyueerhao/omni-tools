@@ -79,6 +79,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
         /* Logged In User Pill */
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
+            id="user-menu-btn"
             className="btn btn-secondary"
             style={{
               padding: '4px 10px',
@@ -105,13 +106,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
             </span>
             {isSuper ? (
               <span
-                className="badge"
+                className="badge badge-purple-gradient"
                 style={{
                   padding: '1px 6px',
                   fontSize: '0.625rem',
-                  background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                  color: '#fff',
-                  fontWeight: 700,
                 }}
               >
                 👑 SUPER
@@ -280,6 +278,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
               </button>
 
               <button
+                id="user-logout-btn"
                 className="btn-ghost"
                 style={{
                   width: '100%',

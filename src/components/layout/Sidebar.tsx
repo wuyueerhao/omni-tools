@@ -108,22 +108,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 仅超级管理员可见的专属入口 */}
         {isSuper && (
           <div style={{ marginTop: '12px' }}>
-            <div className="nav-section-title" style={{ color: '#a855f7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="nav-section-title" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span>👑 管理专区</span>
             </div>
             <ul className="nav-list">
               <li>
                 <button
+                  id="nav-super-admin-btn"
                   className={`nav-item-btn ${currentToolId === 'super-admin-panel' ? 'active' : ''}`}
-                  style={{
-                    background: currentToolId === 'super-admin-panel' ? 'rgba(168, 85, 247, 0.25)' : 'rgba(168, 85, 247, 0.08)',
-                    borderColor: 'rgba(168, 85, 247, 0.35)',
-                    color: 'var(--text-primary)',
-                  }}
                   onClick={() => onSelectTool('super-admin-panel')}
                 >
-                  <Settings size={18} color="#a855f7" />
-                  <span style={{ fontWeight: 600 }}>系统设置</span>
+                  <Settings size={18} />
+                  <span>系统设置</span>
                 </button>
               </li>
             </ul>

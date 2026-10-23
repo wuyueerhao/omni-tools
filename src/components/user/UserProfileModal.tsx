@@ -210,6 +210,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           border: '1px solid var(--border-color)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
           overflow: 'hidden',
+          margin: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -232,12 +233,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{user.username}</h3>
                 {isSuper ? (
                   <span
-                    className="badge"
+                    className="badge badge-purple-gradient"
                     style={{
-                      background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                      color: '#fff',
                       fontSize: '0.6875rem',
-                      fontWeight: 700,
                     }}
                   >
                     👑 超级管理员

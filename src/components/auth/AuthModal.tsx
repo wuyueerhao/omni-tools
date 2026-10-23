@@ -88,6 +88,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         style={{
           width: '100%',
           maxWidth: '460px',
+          maxHeight: 'calc(100vh - 48px)',
+          overflowY: 'auto',
           padding: '28px',
           borderRadius: 'var(--radius-lg)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
@@ -96,6 +98,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '20px',
+          margin: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -165,6 +168,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <UserIcon size={14} /> 用户名 或 邮箱
               </label>
               <input
+                id="auth-login-identifier"
                 type="text"
                 className="input-text"
                 placeholder="请输入用户名或注册邮箱"
@@ -179,6 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <Lock size={14} /> 密码
               </label>
               <input
+                id="auth-login-password"
                 type="password"
                 className="input-text"
                 placeholder="请输入登录密码"
@@ -187,7 +192,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '6px' }} disabled={isLoading}>
+            <button id="auth-login-submit" type="submit" className="btn btn-primary" style={{ marginTop: '6px' }} disabled={isLoading}>
               {isLoading ? '验证登录中...' : '立即登录'}
             </button>
           </form>
@@ -367,7 +372,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <span>✓ 2FA 令牌多端云同步</span>
             <span>✓ 虚拟身份一键收藏夹</span>
             <span>✓ 极客密码专属保险箱</span>
-            <span>✓ 管理员审计控制台</span>
+            <span>✓ 专属独立个人中心</span>
           </div>
         </div>
       </div>

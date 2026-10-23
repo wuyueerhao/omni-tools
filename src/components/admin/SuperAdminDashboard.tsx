@@ -310,11 +310,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                 系统设置
               </h1>
               <span
-                className="badge"
+                className="badge badge-purple-gradient"
                 style={{
-                  background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                  color: '#fff',
-                  fontWeight: 700,
                   fontSize: '0.6875rem',
                 }}
               >
@@ -331,8 +328,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             当前操作者: <b style={{ color: 'var(--text-primary)' }}>{currentUser?.username}</b>
           </span>
-          <span className="badge badge-emerald" style={{ fontSize: '0.6875rem' }}>
-            SuperAdmin
+          <span className="badge badge-purple-gradient" style={{ fontSize: '0.6875rem' }}>
+            👑 SuperAdmin
           </span>
         </div>
       </div>
@@ -598,7 +595,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: p.color }} />
                 <span>{p.name}</span>
                 {aiForm[p.id as keyof SystemAIConfig] && (aiForm[p.id as keyof SystemAIConfig] as any).enabled && (
-                  <span className="badge badge-emerald" style={{ fontSize: '0.625rem', padding: '1px 5px' }}>
+                  <span
+                    className={activeAiProvider === p.id ? 'badge' : 'badge badge-emerald'}
+                    style={{
+                      fontSize: '0.625rem',
+                      padding: '1px 5px',
+                      ...(activeAiProvider === p.id
+                        ? { background: 'rgba(255, 255, 255, 0.25)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)' }
+                        : {}),
+                    }}
+                  >
                     已启用
                   </span>
                 )}
@@ -927,7 +933,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'left' }}>
                   <th style={{ padding: '12px 10px' }}>用户</th>
                   <th style={{ padding: '12px 10px' }}>邮箱</th>
                   <th style={{ padding: '12px 10px' }}>当前角色与权限</th>
@@ -964,7 +970,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
                       <td style={{ padding: '12px 10px' }}>
                         {isWorld ? (
-                          <span className="badge badge-primary" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
+                          <span className="badge badge-purple-gradient">
                             👑 超级管理员 (锁定)
                           </span>
                         ) : (

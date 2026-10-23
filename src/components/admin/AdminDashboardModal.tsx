@@ -81,6 +81,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
           border: '1px solid var(--border-color)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
+          margin: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -104,9 +105,15 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>管理员控制中心</h3>
-                <span className="badge badge-emerald" style={{ fontSize: '0.6875rem' }}>
-                  {AuthService.isSuperAdmin() ? '👑 超级管理员' : '🛡️ 管理员'}
-                </span>
+                {AuthService.isSuperAdmin() ? (
+                  <span className="badge badge-purple-gradient" style={{ fontSize: '0.6875rem' }}>
+                    👑 超级管理员
+                  </span>
+                ) : (
+                  <span className="badge badge-emerald" style={{ fontSize: '0.6875rem' }}>
+                    🛡️ 管理员
+                  </span>
+                )}
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 全局用户账户管理、多端云同步审计与系统运行状态监控
@@ -190,8 +197,16 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                       </td>
                       <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{u.email}</td>
                       <td style={{ padding: '10px 12px' }}>
-                        <span className={u.role === 'admin' ? 'badge badge-emerald' : 'badge badge-cyan'}>
-                          {u.role === 'admin' ? '超级管理员' : '标准用户'}
+                        <span
+                          className={
+                            u.role === 'super_admin'
+                              ? 'badge badge-purple-gradient'
+                              : u.role === 'admin'
+                              ? 'badge badge-emerald'
+                              : 'badge badge-cyan'
+                          }
+                        >
+                          {u.role === 'super_admin' ? '👑 超级管理员' : u.role === 'admin' ? '🛡️ 管理员' : '💎 标准用户'}
                         </span>
                       </td>
                       <td style={{ padding: '10px 12px', textTransform: 'uppercase', fontSize: '0.6875rem' }}>
