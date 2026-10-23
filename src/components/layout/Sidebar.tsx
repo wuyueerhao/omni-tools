@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CATEGORIES, TOOLS } from '../../config/tools';
 import type { ToolCategory } from '../../types';
 import { DynamicIcon } from '../common/DynamicIcon';
-import { LayoutGrid, Wrench, Shield } from 'lucide-react';
+import { LayoutGrid, Wrench, Shield, Settings } from 'lucide-react';
 import { AuthService } from '../../services/authService';
 import type { User } from '../../types/user';
 
@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isSuper && (
           <div style={{ marginTop: '12px' }}>
             <div className="nav-section-title" style={{ color: '#a855f7', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>👑 超管专区</span>
+              <span>👑 管理专区</span>
             </div>
             <ul className="nav-list">
               <li>
@@ -122,8 +122,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                   onClick={() => onSelectTool('super-admin-panel')}
                 >
-                  <Shield size={18} color="#a855f7" />
-                  <span style={{ fontWeight: 600 }}>超级管理员后台</span>
+                  <Settings size={18} color="#a855f7" />
+                  <span style={{ fontWeight: 600 }}>系统设置</span>
                 </button>
               </li>
             </ul>

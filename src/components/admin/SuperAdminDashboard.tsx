@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Shield,
+  Settings,
   Cloud,
   Cpu,
   Image as ImageIcon,
@@ -94,46 +94,48 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
   const isSuper = AuthService.isSuperAdmin(currentUser);
   if (!isSuper) {
     return (
-      <div
-        className="glass-panel"
-        style={{
-          maxWidth: '560px',
-          margin: '60px auto',
-          padding: '36px',
-          borderRadius: 'var(--radius-lg)',
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '16px',
-          background: 'var(--bg-elevated)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-        }}
-      >
+      <div className="tool-view-wrapper">
         <div
+          className="glass-panel"
           style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'rgba(239, 68, 68, 0.12)',
-            color: 'var(--accent-rose)',
+            maxWidth: '560px',
+            margin: '60px auto',
+            padding: '36px',
+            borderRadius: 'var(--radius-lg)',
+            textAlign: 'center',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: '16px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
           }}
         >
-          <Lock size={28} />
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.12)',
+              color: 'var(--accent-rose)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Lock size={28} />
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            无访问权限 (403 Forbidden)
+          </h2>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            此页面为<b>系统设置独立管理控制中心</b>
+            。当前登录账号无权限查看全站配置与敏感参数。请使用超级管理员账号登录后访问。
+          </p>
+          <button className="btn btn-primary" onClick={onBack} style={{ marginTop: '8px' }}>
+            <ArrowLeft size={16} /> 返回工具仪表盘
+          </button>
         </div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-          无访问权限 (403 Forbidden)
-        </h2>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          此页面为<b>超级管理员 (Super Admin) 独立管理页面</b>
-          。当前登录账号无权限查看全站配置与敏感参数。请使用超级管理员账号登录后访问。
-        </p>
-        <button className="btn btn-primary" onClick={onBack} style={{ marginTop: '8px' }}>
-          <ArrowLeft size={16} /> 返回工具仪表盘
-        </button>
       </div>
     );
   }
@@ -284,123 +286,126 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
   };
 
   return (
-    <div className="tool-view-wrapper" style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '40px' }}>
-      {/* Top Banner */}
+    <div className="tool-view-wrapper">
+      {/* Tool Header - 完全与 Excel工具 / 其它页面标准保持一致 */}
+      <div className="tool-view-header">
+        <div className="tool-view-title-wrap">
+          <button className="btn btn-secondary" style={{ padding: '8px 12px' }} onClick={onBack}>
+            <ArrowLeft size={16} /> 返回仪表盘
+          </button>
+
+          <div
+            className="tool-view-icon-box"
+            style={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+              boxShadow: '0 4px 14px rgba(168, 85, 247, 0.35)',
+            }}
+          >
+            <Settings size={24} />
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h1 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                系统设置
+              </h1>
+              <span
+                className="badge"
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.6875rem',
+                }}
+              >
+                👑 超管专属
+              </span>
+            </div>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+              全站核心配置中心：Cloudflare R2 存储、AI 接口秘钥、图片保存位置、用户分级管理与安全设置
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            当前操作者: <b style={{ color: 'var(--text-primary)' }}>{currentUser?.username}</b>
+          </span>
+          <span className="badge badge-emerald" style={{ fontSize: '0.6875rem' }}>
+            SuperAdmin
+          </span>
+        </div>
+      </div>
+
+      {/* Tab Navigation Bar */}
       <div
         className="glass-panel"
         style={{
-          padding: '24px 28px',
-          borderRadius: 'var(--radius-lg)',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)',
-          border: '1px solid rgba(168, 85, 247, 0.35)',
+          padding: '6px',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
+          gap: '8px',
+          marginBottom: '20px',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
+          overflowX: 'auto',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <button className="btn btn-secondary" onClick={onBack} style={{ padding: '8px 12px' }}>
-              <ArrowLeft size={16} /> 返回仪表盘
-            </button>
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                boxShadow: '0 8px 16px -4px rgba(168, 85, 247, 0.5)',
-              }}
-            >
-              <Shield size={22} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  超级管理员控制台 (Super Admin Panel)
-                </h1>
-                <span className="badge badge-primary" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
-                  👑 仅超管可见
-                </span>
-              </div>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                全局核心配置中心：Cloudflare R2 存储、AI 接口秘钥、图片保存位置、用户分级管理与安全设置
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              当前操作者: <b>{currentUser?.username}</b> (SuperAdmin)
-            </span>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            borderBottom: '1px solid var(--border-color)',
-            paddingBottom: '8px',
-            overflowX: 'auto',
-          }}
+        <button
+          type="button"
+          className={`btn ${activeTab === 'r2' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '0.875rem', gap: '8px', whiteSpace: 'nowrap' }}
+          onClick={() => setActiveTab('r2')}
         >
-          <button
-            className={`btn ${activeTab === 'r2' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ padding: '8px 14px', fontSize: '0.875rem', gap: '6px' }}
-            onClick={() => setActiveTab('r2')}
-          >
-            <Cloud size={16} />
-            <span>Cloudflare R2 存储</span>
-          </button>
+          <Cloud size={16} />
+          <span>Cloudflare R2 存储</span>
+        </button>
 
-          <button
-            className={`btn ${activeTab === 'ai' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ padding: '8px 14px', fontSize: '0.875rem', gap: '6px' }}
-            onClick={() => setActiveTab('ai')}
-          >
-            <Cpu size={16} />
-            <span>AI 大模型 API Key</span>
-          </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === 'ai' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '0.875rem', gap: '8px', whiteSpace: 'nowrap' }}
+          onClick={() => setActiveTab('ai')}
+        >
+          <Cpu size={16} />
+          <span>AI 大模型 API Key</span>
+        </button>
 
-          <button
-            className={`btn ${activeTab === 'image' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ padding: '8px 14px', fontSize: '0.875rem', gap: '6px' }}
-            onClick={() => setActiveTab('image')}
-          >
-            <ImageIcon size={16} />
-            <span>图片保存位置与分发</span>
-          </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === 'image' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '0.875rem', gap: '8px', whiteSpace: 'nowrap' }}
+          onClick={() => setActiveTab('image')}
+        >
+          <ImageIcon size={16} />
+          <span>图片保存位置与分发</span>
+        </button>
 
-          <button
-            className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ padding: '8px 14px', fontSize: '0.875rem', gap: '6px' }}
-            onClick={() => setActiveTab('users')}
-          >
-            <Users size={16} />
-            <span>用户管理与注册权限</span>
-          </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '0.875rem', gap: '8px', whiteSpace: 'nowrap' }}
+          onClick={() => setActiveTab('users')}
+        >
+          <Users size={16} />
+          <span>用户管理与注册权限</span>
+        </button>
 
-          <button
-            className={`btn ${activeTab === 'security' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ padding: '8px 14px', fontSize: '0.875rem', gap: '6px' }}
-            onClick={() => setActiveTab('security')}
-          >
-            <Lock size={16} />
-            <span>安全策略与审计</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          className={`btn ${activeTab === 'security' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '0.875rem', gap: '8px', whiteSpace: 'nowrap' }}
+          onClick={() => setActiveTab('security')}
+        >
+          <Lock size={16} />
+          <span>安全策略与审计</span>
+        </button>
       </div>
 
       {/* Security notice regarding Git */}
       <div
         style={{
-          marginTop: '16px',
+          marginBottom: '20px',
           padding: '10px 16px',
           borderRadius: 'var(--radius-md)',
           background: 'rgba(16, 185, 129, 0.08)',
@@ -421,13 +426,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
       {/* Tab 1: Cloudflare R2 */}
       {activeTab === 'r2' && (
-        <div className="glass-panel" style={{ marginTop: '20px', padding: '24px', borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
             <div>
               <h2 style={{ fontSize: '1.125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Cloud size={20} color="var(--accent-cyan)" /> Cloudflare R2 对象存储配置
               </h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                 配置 Cloudflare R2 S3 兼容凭证，供全站图片、身份资产与数据备份上传
               </p>
             </div>
@@ -441,7 +446,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             </label>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
             <div className="input-group">
               <label className="input-label">Cloudflare Account ID (账户 ID)</label>
               <input
@@ -497,7 +502,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             </div>
           </div>
 
-          <div className="input-group" style={{ marginTop: '12px' }}>
+          <div className="input-group" style={{ marginTop: '14px' }}>
             <label className="input-label">公开访问域名 / 自定义 CDN 域名 (Public Custom Domain)</label>
             <input
               type="text"
@@ -506,7 +511,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
               value={r2Form.publicDomain}
               onChange={(e) => setR2Form({ ...r2Form, publicDomain: e.target.value })}
             />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               用于生成可直接公开预览或下载的图片/资源直链
             </span>
           </div>
@@ -514,8 +519,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           {r2TestResult && (
             <div
               style={{
-                marginTop: '14px',
-                padding: '10px 14px',
+                marginTop: '16px',
+                padding: '12px 16px',
                 borderRadius: 'var(--radius-md)',
                 background: r2TestResult.success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                 border: `1px solid ${r2TestResult.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
@@ -531,11 +536,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <button className="btn btn-primary" onClick={handleSaveR2}>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+            <button className="btn btn-primary" onClick={handleSaveR2} style={{ padding: '8px 20px' }}>
               <Save size={16} /> 保存 R2 配置
             </button>
-            <button className="btn btn-secondary" onClick={handleTestR2} disabled={r2Testing}>
+            <button className="btn btn-secondary" onClick={handleTestR2} disabled={r2Testing} style={{ padding: '8px 20px' }}>
               {r2Testing ? <RefreshCw size={16} className="spin" /> : <Sparkles size={16} />}
               <span>{r2Testing ? '测试中...' : '测试 R2 连通性'}</span>
             </button>
@@ -545,13 +550,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
       {/* Tab 2: AI Providers */}
       {activeTab === 'ai' && (
-        <div className="glass-panel" style={{ marginTop: '20px', padding: '24px', borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h2 style={{ fontSize: '1.125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Cpu size={20} color="var(--accent-primary)" /> 常用 AI 大模型与 API Key
               </h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                 配置 OpenAI、Claude、Gemini、DeepSeek 核心模型凭证与代理端点
               </p>
             </div>
@@ -560,7 +565,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
               <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>全局默认主模型：</span>
               <select
                 className="input-select"
-                style={{ width: 'auto', padding: '6px 12px' }}
+                style={{ width: 'auto', padding: '6px 14px' }}
                 value={aiForm.defaultProvider}
                 onChange={(e) => setAiForm({ ...aiForm, defaultProvider: e.target.value as any })}
               >
@@ -573,7 +578,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           </div>
 
           {/* AI Sub-tab navigation */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
             {[
               { id: 'openai', name: 'OpenAI (GPT-4o)', color: '#10a37f' },
               { id: 'claude', name: 'Anthropic Claude', color: '#d97706' },
@@ -583,8 +588,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
               <button
                 key={p.id}
                 type="button"
-                className={`btn ${activeAiProvider === p.id ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ padding: '6px 14px', fontSize: '0.8125rem' }}
+                className={`btn ${activeAiProvider === p.id ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '8px 16px', fontSize: '0.8125rem', gap: '8px' }}
                 onClick={() => {
                   setActiveAiProvider(p.id as any);
                   setAiTestResult(null);
@@ -593,7 +598,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: p.color }} />
                 <span>{p.name}</span>
                 {aiForm[p.id as keyof SystemAIConfig] && (aiForm[p.id as keyof SystemAIConfig] as any).enabled && (
-                  <span className="badge badge-emerald" style={{ fontSize: '0.625rem', padding: '1px 4px' }}>
+                  <span className="badge badge-emerald" style={{ fontSize: '0.625rem', padding: '1px 5px' }}>
                     已启用
                   </span>
                 )}
@@ -609,18 +614,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             return (
               <div
                 style={{
-                  padding: '20px',
+                  padding: '24px',
                   background: 'var(--bg-tertiary)',
                   borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--border-color)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
+                  gap: '18px',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                    {activeAiProvider.toUpperCase()} 专属配置
+                    {activeAiProvider.toUpperCase()} 专属配置参数
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                     <input
@@ -633,7 +638,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                         })
                       }
                     />
-                    <span style={{ fontSize: '0.8125rem' }}>启用此模型通道</span>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>启用此模型通道</span>
                   </label>
                 </div>
 
@@ -654,6 +659,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                   <input
                     type={isKeyVisible ? 'text' : 'password'}
                     className="input-text"
+                    style={{ fontFamily: 'var(--font-mono)' }}
                     placeholder={`输入 ${activeAiProvider.toUpperCase()} API Key (如 sk-...)`}
                     value={currentAi.apiKey}
                     onChange={(e) =>
@@ -665,7 +671,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                   <div className="input-group" style={{ margin: 0 }}>
                     <label className="input-label">Base URL (API 端点 / 代理地址)</label>
                     <input
@@ -700,7 +706,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                 {aiTestResult && (
                   <div
                     style={{
-                      padding: '10px 14px',
+                      padding: '12px 16px',
                       borderRadius: 'var(--radius-md)',
                       background: aiTestResult.success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                       border: `1px solid ${aiTestResult.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
@@ -716,14 +722,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                  <button className="btn btn-primary" onClick={handleSaveAI}>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <button className="btn btn-primary" onClick={handleSaveAI} style={{ padding: '8px 20px' }}>
                     <Save size={16} /> 保存当前 AI 设置
                   </button>
                   <button
                     className="btn btn-secondary"
                     onClick={() => handleTestAI(activeAiProvider)}
                     disabled={aiTesting}
+                    style={{ padding: '8px 20px' }}
                   >
                     {aiTesting ? <RefreshCw size={16} className="spin" /> : <Sparkles size={16} />}
                     <span>{aiTesting ? '测试中...' : `测试 ${activeAiProvider.toUpperCase()} 连通性`}</span>
@@ -737,19 +744,19 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
       {/* Tab 3: Image Storage */}
       {activeTab === 'image' && (
-        <div className="glass-panel" style={{ marginTop: '20px', padding: '24px', borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ marginBottom: '20px' }}>
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ marginBottom: '24px' }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ImageIcon size={20} color="var(--accent-emerald)" /> 图片保存位置与分发策略
             </h2>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               设定全站图片处理工坊导出的保存目标：浏览器本地沙箱、Cloudflare R2 对象存储或自建图床
             </p>
           </div>
 
           <div className="input-group">
             <label className="input-label">主存储驱动 (Storage Driver)</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
               {[
                 {
                   id: 'local_browser',
@@ -770,15 +777,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                 <div
                   key={driver.id}
                   style={{
-                    padding: '14px',
+                    padding: '16px',
                     borderRadius: 'var(--radius-md)',
                     border: `2px solid ${imageForm.driver === driver.id ? 'var(--accent-primary)' : 'var(--border-color)'}`,
                     background: imageForm.driver === driver.id ? 'rgba(99, 102, 241, 0.08)' : 'var(--bg-tertiary)',
                     cursor: 'pointer',
+                    transition: 'all 0.2s',
                   }}
                   onClick={() => setImageForm({ ...imageForm, driver: driver.id as any })}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{driver.title}</span>
                     <input
                       type="radio"
@@ -786,13 +794,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                       onChange={() => setImageForm({ ...imageForm, driver: driver.id as any })}
                     />
                   </div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{driver.desc}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                    {driver.desc}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px', marginTop: '18px' }}>
             <div className="input-group">
               <label className="input-label">存储路径前缀规则</label>
               <input
@@ -802,7 +812,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                 value={imageForm.pathPrefix}
                 onChange={(e) => setImageForm({ ...imageForm, pathPrefix: e.target.value })}
               />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                 支持通配符: &#123;year&#125;, &#123;month&#125;, &#123;day&#125;
               </span>
             </div>
@@ -823,7 +833,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           </div>
 
           {imageForm.driver === 'custom_api' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px', marginTop: '12px' }}>
               <div className="input-group">
                 <label className="input-label">图床上传 API URL (POST)</label>
                 <input
@@ -859,7 +869,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             </label>
           </div>
 
-          <button className="btn btn-primary" onClick={handleSaveImageStorage} style={{ marginTop: '20px' }}>
+          <button className="btn btn-primary" onClick={handleSaveImageStorage} style={{ marginTop: '24px', padding: '8px 20px' }}>
             <Save size={16} /> 保存图片存储策略
           </button>
         </div>
@@ -867,18 +877,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
       {/* Tab 4: Users Management & Registration Control */}
       {activeTab === 'users' && (
-        <div className="glass-panel" style={{ marginTop: '20px', padding: '24px', borderRadius: 'var(--radius-lg)' }}>
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: 'var(--radius-lg)' }}>
           {/* Registration Control Banner */}
           <div
             style={{
-              padding: '16px 20px',
+              padding: '18px 22px',
               borderRadius: 'var(--radius-md)',
               background: userPolicyForm.allowRegistration ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
               border: `1px solid ${userPolicyForm.allowRegistration ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '24px',
+              marginBottom: '26px',
             }}
           >
             <div>
@@ -891,7 +901,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                   <span className="badge badge-rose">已暂停新注册</span>
                 )}
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '6px 0 0 0' }}>
                 {userPolicyForm.allowRegistration
                   ? '允许访客在登录弹窗自主注册新账号，注册后自动具备多端云同步特权。'
                   : '已限制新用户自主注册。未注册访客仅可使用工具，不能创建新账号。'}
@@ -900,17 +910,17 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
             <button
               className={`btn ${userPolicyForm.allowRegistration ? 'btn-secondary' : 'btn-primary'}`}
-              style={{ padding: '8px 16px', fontSize: '0.8125rem' }}
+              style={{ padding: '8px 18px', fontSize: '0.8125rem' }}
               onClick={() => handleToggleRegistration(!userPolicyForm.allowRegistration)}
             >
               {userPolicyForm.allowRegistration ? '点击关闭注册' : '点击开启注册'}
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>全站用户列表与分级权限管理 ({accounts.length} 人)</h3>
-            <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.75rem' }} onClick={reloadData}>
-              <RefreshCw size={14} /> 刷新列表
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={reloadData}>
+              <RefreshCw size={14} /> 刷新用户列表
             </button>
           </div>
 
@@ -918,12 +928,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 8px' }}>用户</th>
-                  <th style={{ padding: '10px 8px' }}>邮箱</th>
-                  <th style={{ padding: '10px 8px' }}>当前角色与权限</th>
-                  <th style={{ padding: '10px 8px' }}>注册方式</th>
-                  <th style={{ padding: '10px 8px' }}>注册时间</th>
-                  <th style={{ padding: '10px 8px', textAlign: 'right' }}>操作</th>
+                  <th style={{ padding: '12px 10px' }}>用户</th>
+                  <th style={{ padding: '12px 10px' }}>邮箱</th>
+                  <th style={{ padding: '12px 10px' }}>当前角色与权限</th>
+                  <th style={{ padding: '12px 10px' }}>注册方式</th>
+                  <th style={{ padding: '12px 10px' }}>注册时间</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'right' }}>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -932,12 +942,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
                   return (
                     <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '10px 8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <td style={{ padding: '12px 10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <img
                             src={u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.username}`}
                             alt={u.username}
-                            style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+                            style={{ width: '32px', height: '32px', borderRadius: '50%' }}
                           />
                           <div>
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{u.username}</div>
@@ -950,9 +960,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                         </div>
                       </td>
 
-                      <td style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>{u.email}</td>
+                      <td style={{ padding: '12px 10px', color: 'var(--text-secondary)' }}>{u.email}</td>
 
-                      <td style={{ padding: '10px 8px' }}>
+                      <td style={{ padding: '12px 10px' }}>
                         {isWorld ? (
                           <span className="badge badge-primary" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
                             👑 超级管理员 (锁定)
@@ -960,7 +970,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                         ) : (
                           <select
                             className="input-select"
-                            style={{ width: 'auto', padding: '4px 8px', fontSize: '0.75rem' }}
+                            style={{ width: 'auto', padding: '4px 10px', fontSize: '0.75rem' }}
                             value={u.role}
                             onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
                           >
@@ -971,16 +981,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                         )}
                       </td>
 
-                      <td style={{ padding: '10px 8px' }}>
+                      <td style={{ padding: '12px 10px' }}>
                         <span className="badge badge-secondary" style={{ textTransform: 'uppercase' }}>
                           {u.provider}
                         </span>
                       </td>
 
-                      <td style={{ padding: '10px 8px', color: 'var(--text-muted)' }}>{u.createdAt}</td>
+                      <td style={{ padding: '12px 10px', color: 'var(--text-muted)' }}>{u.createdAt}</td>
 
-                      <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                           <button
                             className="copy-btn"
                             title="重置用户密码"
@@ -1015,17 +1025,17 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           {resetPassUser && (
             <div
               style={{
-                marginTop: '16px',
-                padding: '16px',
+                marginTop: '18px',
+                padding: '18px',
                 background: 'var(--bg-tertiary)',
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-color)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                gap: '14px',
               }}
             >
-              <KeyRound size={18} color="var(--accent-primary)" />
+              <KeyRound size={20} color="var(--accent-primary)" />
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
                   重置用户 [{resetPassUser.username}] 的登录密码：
@@ -1036,7 +1046,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
                   placeholder="输入新密码 (至少 4 位)"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  style={{ marginTop: '6px' }}
+                  style={{ marginTop: '8px' }}
                 />
               </div>
               <button className="btn btn-primary" onClick={handleResetPassword} style={{ alignSelf: 'flex-end' }}>
@@ -1056,17 +1066,17 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
       {/* Tab 5: Security & Audit */}
       {activeTab === 'security' && (
-        <div className="glass-panel" style={{ marginTop: '20px', padding: '24px', borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ marginBottom: '20px' }}>
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ marginBottom: '24px' }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Lock size={20} color="var(--accent-rose)" /> 安全策略与审计日志
             </h2>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               防暴力破解防护、审计追踪记录与配置安全备份导出
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
             <div className="input-group">
               <label className="input-label">登录失败锁定上限 (次)</label>
               <input
@@ -1110,22 +1120,22 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={handleSaveSecurity} style={{ marginTop: '6px' }}>
+          <button className="btn btn-primary" onClick={handleSaveSecurity} style={{ marginTop: '10px', padding: '8px 20px' }}>
             <Save size={16} /> 保存安全策略
           </button>
 
           {/* Backup & Restore */}
           <div
             style={{
-              marginTop: '24px',
-              padding: '16px',
+              marginTop: '28px',
+              padding: '18px',
               borderRadius: 'var(--radius-md)',
               background: 'var(--bg-tertiary)',
               border: '1px solid var(--border-color)',
             }}
           >
-            <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '10px' }}>系统配置备份与迁移</h4>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '12px' }}>系统配置备份与迁移</h4>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <button className="btn btn-secondary" onClick={() => handleExportBackup(true)}>
                 <Download size={14} /> 导出脱敏配置文件 (安全无秘钥)
               </button>
@@ -1140,8 +1150,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
           </div>
 
           {/* Audit Logs */}
-          <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ marginTop: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
               <h3 style={{ fontSize: '0.9375rem', fontWeight: 600 }}>全站操作审计日志 (最近 {auditLogs.length} 条)</h3>
               <button
                 className="btn btn-secondary"
@@ -1154,27 +1164,27 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onBack
 
             <div
               style={{
-                maxHeight: '260px',
+                maxHeight: '300px',
                 overflowY: 'auto',
                 background: 'var(--bg-tertiary)',
                 borderRadius: 'var(--radius-md)',
-                padding: '8px',
+                padding: '10px',
                 fontFamily: 'monospace',
                 fontSize: '0.75rem',
               }}
             >
               {auditLogs.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>暂无审计日志</div>
+                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>暂无审计日志</div>
               ) : (
                 auditLogs.map((log) => (
                   <div
                     key={log.id}
                     style={{
-                      padding: '6px 8px',
+                      padding: '8px 10px',
                       borderBottom: '1px solid var(--border-color)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
+                      gap: '12px',
                     }}
                   >
                     <span style={{ color: 'var(--text-muted)' }}>[{log.timestamp}]</span>

@@ -5,6 +5,12 @@
 export type UserRole = 'super_admin' | 'admin' | 'user';
 export type AuthProvider = 'local' | 'google' | 'facebook' | 'github';
 
+export interface SocialBindings {
+  google?: string;
+  facebook?: string;
+  github?: string;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -15,6 +21,7 @@ export interface User {
   createdAt: string;
   lastLoginAt: string;
   syncedAt?: string;
+  socialBindings?: SocialBindings;
 }
 
 export interface UserAccountCredentials {
@@ -26,6 +33,7 @@ export interface UserAccountCredentials {
   avatar?: string;
   provider: AuthProvider;
   createdAt: string;
+  socialBindings?: SocialBindings;
 }
 
 // 登录后专享：云端同步数据包

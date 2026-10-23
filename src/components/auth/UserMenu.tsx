@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User as UserIcon, Shield, Cloud, LogOut, Star, ShieldCheck, ChevronDown, Sparkles } from 'lucide-react';
+import { User as UserIcon, Cloud, LogOut, Star, ShieldCheck, ChevronDown, Sparkles, Settings } from 'lucide-react';
 import { AuthService } from '../../services/authService';
 import { CloudSyncService } from '../../services/cloudSyncService';
 import { useToast } from '../common/Toast';
 import { AuthModal } from './AuthModal';
 import { UserProfileModal } from '../user/UserProfileModal';
-import { AdminDashboardModal } from '../admin/AdminDashboardModal';
 import type { User } from '../../types/user';
 
 interface UserMenuProps {
@@ -18,8 +17,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [profileTab, setProfileTab] = useState<'sync' | 'favorites' | 'vault'>('sync');
+  const [profileTab, setProfileTab] = useState<'profile' | 'sync' | 'favorites' | 'vault'>('profile');
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +52,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
     }
   };
 
-  const openProfileWithTab = (tab: 'sync' | 'favorites' | 'vault') => {
+  const openProfileWithTab = (tab: 'profile' | 'sync' | 'favorites' | 'vault') => {
     setProfileTab(tab);
     setIsProfileModalOpen(true);
     setIsDropdownOpen(false);
@@ -98,7 +96,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
             onClick={() => setIsDropdownOpen((prev) => !prev)}
           >
             <img
-              src={user.avatar}
+              src={user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.username}`}
               alt={user.username}
               style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--bg-tertiary)' }}
             />
@@ -170,6 +168,25 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
                 </div>
               </div>
 
+              {/* 个人中心 (所有登录用户均可进入：查看资料、修改信息、改密码、绑定社媒) */}
+              <button
+                className="btn-ghost"
+                style={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  padding: '8px 10px',
+                  fontSize: '0.8125rem',
+                  borderRadius: '4px',
+                  gap: '8px',
+                  color: 'var(--text-primary)',
+                  fontWeight: 500,
+                }}
+                onClick={() => openProfileWithTab('profile')}
+              >
+                <UserIcon size={15} color="var(--accent-primary)" />
+                <span>👤 个人中心</span>
+              </button>
+
               {/* Menu items */}
               <button
                 className="btn-ghost"
@@ -219,7 +236,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
                 <span>我的密码保险箱</span>
               </button>
 
-              {/* 仅超级管理员可看到的专属后台入口 */}
+              {/* 仅超级管理员可看到的系统设置入口 */}
               {isSuper && (
                 <button
                   className="btn-ghost"
@@ -239,32 +256,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
                     onNavigateToSuperAdmin?.();
                   }}
                 >
-                  <Shield size={15} color="#a855f7" />
-                  <span>👑 超级管理员后台</span>
-                </button>
-              )}
-
-              {/* 管理员工作台 (超级管理员与普通管理员均可查看日常审计与备份) */}
-              {(isSuper || isRegularAdmin) && (
-                <button
-                  className="btn-ghost"
-                  style={{
-                    width: '100%',
-                    justifyContent: 'flex-start',
-                    padding: '8px 10px',
-                    fontSize: '0.8125rem',
-                    borderRadius: '4px',
-                    gap: '8px',
-                    color: 'var(--accent-primary)',
-                    background: 'rgba(99, 102, 241, 0.08)',
-                  }}
-                  onClick={() => {
-                    setIsAdminModalOpen(true);
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  <Shield size={15} />
-                  <span>🛡️ 管理员审计控制台</span>
+                  <Settings size={15} color="#a855f7" />
+                  <span>👑 系统设置</span>
                 </button>
               )}
 
@@ -317,11 +310,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToSuperAdmin }) =>
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         defaultSubTab={profileTab}
-      />
-
-      <AdminDashboardModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
       />
     </div>
   );

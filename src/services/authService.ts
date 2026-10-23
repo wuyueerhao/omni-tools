@@ -132,6 +132,7 @@ class AuthServiceClass {
       provider: account.provider,
       createdAt: account.createdAt,
       lastLoginAt: new Date().toLocaleString(),
+      socialBindings: account.socialBindings,
     };
 
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
@@ -264,6 +265,145 @@ class AuthServiceClass {
     } catch {
       return [DEFAULT_SUPER_ADMIN];
     }
+  }
+
+  /**
+   * 普通用户/管理员修改自身基本信息 (用户名、邮箱、头像)
+   */
+  public async updateUserProfile(
+    userId: string,
+    data: { username?: string; email?: string; avatar?: string }
+  ): Promise<User> {
+    const accounts = this.getAccounts();
+    const target = accounts.find((a) => a.id === userId);
+    if (!target) throw new Error('用户不存在');
+
+    if (data.username && data.username.trim() !== target.username) {
+      const newName = data.username.trim();
+      if (newName.length < 2) throw new Error('用户名长度至少为 2 个字符');
+      if (accounts.some((a) => a.id !== userId && a.username.toLowerCase() === newName.toLowerCase())) {
+        throw new Error('该用户名已被占用');
+      }
+      target.username = newName;
+    }
+
+    if (data.email && data.email.trim() !== target.email) {
+      const newEmail = data.email.trim().toLowerCase();
+      if (!newEmail.includes('@')) throw new Error('请输入有效的邮箱地址');
+      if (accounts.some((a) => a.id !== userId && a.email.toLowerCase() === newEmail)) {
+        throw new Error('该邮箱已注册');
+      }
+      target.email = newEmail;
+    }
+
+    if (data.avatar) {
+      target.avatar = data.avatar;
+    }
+
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+
+    const currentUser = this.getCurrentUser();
+    let updatedUser: User;
+    if (currentUser && currentUser.id === userId) {
+      updatedUser = {
+        ...currentUser,
+        username: target.username,
+        email: target.email,
+        avatar: target.avatar,
+      };
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      this.notify();
+    } else {
+      updatedUser = {
+        id: target.id,
+        username: target.username,
+        email: target.email,
+        role: target.role,
+        avatar: target.avatar,
+        provider: target.provider,
+        createdAt: target.createdAt,
+        lastLoginAt: new Date().toLocaleString(),
+        socialBindings: target.socialBindings,
+      };
+    }
+
+    this.addAuditLog(`用户修改了个人资料: ${target.username}`, target.username, 'success');
+    return updatedUser;
+  }
+
+  /**
+   * 用户修改自身密码
+   */
+  public async changePassword(userId: string, oldPass: string, newPass: string): Promise<void> {
+    const accounts = this.getAccounts();
+    const target = accounts.find((a) => a.id === userId);
+    if (!target) throw new Error('用户不存在');
+
+    if (target.passwordHash !== oldPass) {
+      throw new Error('原密码不正确，请重新输入');
+    }
+    if (!newPass || newPass.length < 4) {
+      throw new Error('新密码长度至少需要 4 位字符');
+    }
+    if (newPass === oldPass) {
+      throw new Error('新密码不能与原密码相同');
+    }
+
+    target.passwordHash = newPass;
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+    this.addAuditLog(`用户 [${target.username}] 修改了自己的密码`, target.username, 'warning');
+  }
+
+  /**
+   * 绑定或解绑社媒账号 (Google / Facebook / GitHub)
+   */
+  public async toggleSocialBinding(
+    userId: string,
+    provider: 'google' | 'facebook' | 'github'
+  ): Promise<User> {
+    const accounts = this.getAccounts();
+    const target = accounts.find((a) => a.id === userId);
+    if (!target) throw new Error('用户不存在');
+
+    if (!target.socialBindings) {
+      target.socialBindings = {};
+    }
+
+    const isCurrentlyBound = Boolean(target.socialBindings[provider]);
+    if (isCurrentlyBound) {
+      delete target.socialBindings[provider];
+      this.addAuditLog(`用户解绑了 ${provider.toUpperCase()} 社媒账号`, target.username, 'warning');
+    } else {
+      target.socialBindings[provider] = `${target.username}_${provider}@${provider === 'github' ? 'github.com' : provider === 'google' ? 'gmail.com' : 'facebook.com'}`;
+      this.addAuditLog(`用户成功绑定了 ${provider.toUpperCase()} 账号`, target.username, 'success');
+    }
+
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+
+    const currentUser = this.getCurrentUser();
+    let updatedUser: User;
+    if (currentUser && currentUser.id === userId) {
+      updatedUser = {
+        ...currentUser,
+        socialBindings: { ...target.socialBindings },
+      };
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      this.notify();
+    } else {
+      updatedUser = {
+        id: target.id,
+        username: target.username,
+        email: target.email,
+        role: target.role,
+        avatar: target.avatar,
+        provider: target.provider,
+        createdAt: target.createdAt,
+        lastLoginAt: new Date().toLocaleString(),
+        socialBindings: target.socialBindings,
+      };
+    }
+
+    return updatedUser;
   }
 
   /**
