@@ -36,17 +36,20 @@ export interface UserAccountCredentials {
   socialBindings?: SocialBindings;
 }
 
+export interface SavedTotpAccount {
+  id: string;
+  issuer: string;
+  label: string;
+  secret: string;
+  digits: number;
+  period: number;
+  algorithm?: string; // Older accounts use SHA1.
+  createdAt?: string;
+}
+
 // 登录后专享：云端同步数据包
 export interface CloudSyncPayload {
-  totpAccounts?: Array<{
-    id: string;
-    issuer: string;
-    label: string;
-    secret: string;
-    digits: number;
-    period: number;
-    createdAt?: string;
-  }>;
+  totpAccounts?: SavedTotpAccount[];
   favoriteIdentities?: Array<{
     id: string;
     savedAt: string;

@@ -1,82 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as OTPAuth from 'otpauth';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Secret } from 'otpauth';
 import QRCode from 'qrcode';
 import { Copy, Plus, Trash2, QrCode, RefreshCw, KeyRound, ShieldAlert, Cloud } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
 import { AuthService } from '../../services/authService';
 import { CloudSyncService } from '../../services/cloudSyncService';
-
-interface SavedAccount {
-  id: string;
-  issuer: string;
-  label: string;
-  secret: string;
-  digits: number;
-  period: number;
-}
+import type { SavedTotpAccount } from '../../types/user';
+import { createTotp, emptyDraft, identifyInput } from './totpInput';
 
 export const TotpTool: React.FC = () => {
   const { toast } = useToast();
-  const [secret, setSecret] = useState('JBSWY3DPEHPK3PXP');
-  const [label, setLabel] = useState('user@example.com');
-  const [issuer, setIssuer] = useState('GitHub');
-  const [digits, setDigits] = useState<number>(6);
-  const [period] = useState<number>(30);
-  const [token, setToken] = useState('------');
-  const [remainingSeconds, setRemainingSeconds] = useState(30);
+  const [draft, setDraft] = useState(emptyDraft);
+  const { secret, issuer, label, digits, period } = draft;
+  const [rawDigits, setRawDigits] = useState(6);
+  const [now, setNow] = useState(Date.now);
   const [qrModalUrl, setQrModalUrl] = useState<string | null>(null);
 
   // Saved accounts in local storage
-  const [accounts, setAccounts] = useState<SavedAccount[]>(() => {
+  const [accounts, setAccounts] = useState<SavedTotpAccount[]>(() => {
     try {
       const saved = localStorage.getItem('omni_totp_accounts');
-      if (saved) return JSON.parse(saved);
+      const parsed = saved && JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed.filter(account => typeof account?.secret === 'string');
     } catch {
       // ignore
     }
-    return [
-      { id: '1', issuer: 'GitHub', label: 'wuyueerhao', secret: 'JBSWY3DPEHPK3PXP', digits: 6, period: 30 },
-      { id: '2', issuer: 'Cloudflare', label: 'admin@cf', secret: 'HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ', digits: 6, period: 30 },
-    ];
+    return [];
   });
 
-  const timerRef = useRef<number | null>(null);
-
-  const calculateTotp = () => {
+  const totp = useMemo(() => {
     try {
-      const cleanSecret = secret.trim().replace(/\s+/g, '').toUpperCase();
-      if (!cleanSecret) {
-        setToken('------');
-        return;
-      }
-      const totp = new OTPAuth.TOTP({
-        issuer: issuer.trim() || 'OmniTools',
-        label: label.trim() || 'User',
-        algorithm: 'SHA1',
-        digits: digits,
-        period: period,
-        secret: OTPAuth.Secret.fromBase32(cleanSecret),
-      });
-
-      const currentToken = totp.generate();
-      setToken(currentToken);
-
-      const sec = period - (Math.floor(Date.now() / 1000) % period);
-      setRemainingSeconds(sec);
+      return createTotp(draft);
     } catch {
-      setToken('INVALID');
+      return null;
     }
-  };
+  }, [draft]);
+  const token = totp?.generate({ timestamp: now }) ?? (secret.trim() ? 'INVALID' : '------');
+  const remainingSeconds = period - (Math.floor(now / 1000) % period);
+  const accountName = issuer && label ? `${issuer} (${label})` : issuer || label;
 
   useEffect(() => {
-    calculateTotp();
-    timerRef.current = window.setInterval(() => {
-      calculateTotp();
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [secret, digits, issuer, label]);
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const copyToClipboard = (text: string, tip = '已复制动态口令') => {
     navigator.clipboard.writeText(text);
@@ -84,29 +50,26 @@ export const TotpTool: React.FC = () => {
   };
 
   const handleGenerateRandomSecret = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let res = '';
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    for (let i = 0; i < 16; i++) {
-      res += chars[array[i] % chars.length];
-    }
-    setSecret(res);
+    setDraft({ ...emptyDraft, secret: new Secret({ size: 20 }).base32, digits: rawDigits });
     toast('已生成新的随机 Base32 密钥', 'info');
   };
 
+  const selectDigits = (value: number) => {
+    setRawDigits(value);
+    setDraft({ ...draft, digits: value });
+  };
+
   const handleSaveAccount = () => {
-    if (!secret.trim()) {
-      toast('密钥不能为空', 'error');
+    if (!totp) {
+      toast('请输入有效的 Base32 密钥或 TOTP 绑定链接', 'error');
       return;
     }
-    const newAcc: SavedAccount = {
-      id: Date.now().toString(),
-      issuer: issuer.trim() || 'Custom',
-      label: label.trim() || 'Account',
-      secret: secret.trim().toUpperCase(),
-      digits,
-      period,
+    const newAcc: SavedTotpAccount = {
+      ...draft,
+      id: crypto.randomUUID(),
+      issuer: issuer.trim(),
+      label: label.trim(),
+      secret: totp.secret.base32,
     };
     const updated = [newAcc, ...accounts];
     setAccounts(updated);
@@ -129,25 +92,18 @@ export const TotpTool: React.FC = () => {
     toast('已删除该账号', 'info');
   };
 
-  const handleSelectAccount = (acc: SavedAccount) => {
-    setIssuer(acc.issuer);
-    setLabel(acc.label);
-    setSecret(acc.secret);
-    setDigits(acc.digits);
-    toast(`已切换至 ${acc.issuer} (${acc.label})`, 'info');
+  const handleSelectAccount = (acc: SavedTotpAccount) => {
+    setDraft({ ...acc, issuer: acc.issuer ?? '', label: acc.label ?? '' });
+    toast('已切换至所选账号', 'info');
   };
 
   const handleShowQrCode = async () => {
+    if (!totp) return;
+    if (!label.trim()) {
+      toast('生成绑定二维码前，请填写账号备注', 'info');
+      return;
+    }
     try {
-      const cleanSecret = secret.trim().replace(/\s+/g, '').toUpperCase();
-      const totp = new OTPAuth.TOTP({
-        issuer: issuer.trim() || 'OmniTools',
-        label: label.trim() || 'User',
-        algorithm: 'SHA1',
-        digits,
-        period,
-        secret: OTPAuth.Secret.fromBase32(cleanSecret),
-      });
       const uri = totp.toString();
       const dataUrl = await QRCode.toDataURL(uri, { width: 280, margin: 2 });
       setQrModalUrl(dataUrl);
@@ -257,26 +213,28 @@ export const TotpTool: React.FC = () => {
                 userSelect: 'all',
                 textShadow: '0 0 20px rgba(6, 182, 212, 0.4)',
               }}
-              onClick={() => token !== 'INVALID' && copyToClipboard(token)}
+              onClick={() => totp && copyToClipboard(token)}
               title="点击复制"
             >
               {token}
             </div>
 
-            <div style={{ marginTop: '8px', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-              {issuer} ({label})
-            </div>
+            {accountName && (
+              <div style={{ marginTop: '8px', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                {accountName}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               <button
                 className="btn btn-primary"
                 onClick={() => copyToClipboard(token)}
-                disabled={token === 'INVALID'}
+                disabled={!totp}
               >
                 <Copy size={16} />
                 复制口令
               </button>
-              <button className="btn btn-secondary" onClick={handleShowQrCode}>
+              <button className="btn btn-secondary" onClick={handleShowQrCode} disabled={!totp}>
                 <QrCode size={16} />
                 二维码
               </button>
@@ -286,8 +244,8 @@ export const TotpTool: React.FC = () => {
           {/* Config Inputs */}
           <div>
             <div className="input-group">
-              <label className="input-label">
-                <span>Base32 密钥 (Secret Key)</span>
+              <div className="input-label">
+                <label htmlFor="totp-secret">Base32 密钥 (Secret Key)</label>
                 <button
                   type="button"
                   onClick={handleGenerateRandomSecret}
@@ -295,35 +253,38 @@ export const TotpTool: React.FC = () => {
                 >
                   <RefreshCw size={12} /> 生成随机测试密钥
                 </button>
-              </label>
+              </div>
               <input
+                id="totp-secret"
                 type="text"
                 className="input-text input-mono"
-                placeholder="例如: JBSWY3DPEHPK3PXP"
+                placeholder="粘贴 Base32 密钥或 otpauth:// 绑定链接"
                 value={secret}
-                onChange={(e) => setSecret(e.target.value)}
+                onChange={(e) => setDraft(identifyInput(e.target.value, draft, accounts, rawDigits))}
               />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="input-group">
-                <label className="input-label">服务/发行方 (Issuer)</label>
+                <label className="input-label" htmlFor="totp-issuer">服务/发行方 (Issuer)</label>
                 <input
+                  id="totp-issuer"
                   type="text"
                   className="input-text"
-                  placeholder="例如: GitHub / Google"
+                  placeholder="可选"
                   value={issuer}
-                  onChange={(e) => setIssuer(e.target.value)}
+                  onChange={(e) => setDraft({ ...draft, issuer: e.target.value })}
                 />
               </div>
               <div className="input-group">
-                <label className="input-label">账号备注 (Label)</label>
+                <label className="input-label" htmlFor="totp-label">账号备注 (Label)</label>
                 <input
+                  id="totp-label"
                   type="text"
                   className="input-text"
-                  placeholder="例如: user@domain.com"
+                  placeholder="可选"
                   value={label}
-                  onChange={(e) => setLabel(e.target.value)}
+                  onChange={(e) => setDraft({ ...draft, label: e.target.value })}
                 />
               </div>
             </div>
@@ -336,7 +297,7 @@ export const TotpTool: React.FC = () => {
                     type="radio"
                     name="digits"
                     checked={digits === 6}
-                    onChange={() => setDigits(6)}
+                    onChange={() => selectDigits(6)}
                   />
                   6 位 (标准)
                 </label>
@@ -345,7 +306,7 @@ export const TotpTool: React.FC = () => {
                     type="radio"
                     name="digits"
                     checked={digits === 8}
-                    onChange={() => setDigits(8)}
+                    onChange={() => selectDigits(8)}
                   />
                   8 位
                 </label>
@@ -381,14 +342,7 @@ export const TotpTool: React.FC = () => {
               accounts.map((acc) => {
                 let currentCode = '------';
                 try {
-                  const t = new OTPAuth.TOTP({
-                    issuer: acc.issuer,
-                    label: acc.label,
-                    digits: acc.digits,
-                    period: acc.period,
-                    secret: OTPAuth.Secret.fromBase32(acc.secret),
-                  });
-                  currentCode = t.generate();
+                  currentCode = createTotp(acc).generate({ timestamp: now });
                 } catch {
                   currentCode = 'ERR';
                 }
@@ -411,9 +365,9 @@ export const TotpTool: React.FC = () => {
                   >
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                        {acc.issuer}
+                        {acc.issuer || acc.label || '未命名账号'}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{acc.label}</div>
+                      {acc.issuer && acc.label && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{acc.label}</div>}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
