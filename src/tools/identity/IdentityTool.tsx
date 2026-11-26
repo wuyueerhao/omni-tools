@@ -272,6 +272,38 @@ export const COUNTRIES_DATABASE: CountryMeta[] = [
     ],
   },
   {
+    code: 'TR',
+    name: '土耳其',
+    nameEn: 'Türkiye',
+    flag: '🇹🇷',
+    regionLabel: '省 (Province)',
+    currencySymbol: '₺',
+    idLabel: '身份号码 (T.C. Kimlik No.)',
+    regions: [
+      {
+        code: '34',
+        name: 'İstanbul',
+        locations: [
+          { city: 'İstanbul', county: 'Beyoğlu', zip: '34433', areaCode: '212', streets: ['Sıraselviler Caddesi'] },
+        ],
+      },
+      {
+        code: '06',
+        name: 'Ankara',
+        locations: [
+          { city: 'Ankara', county: 'Çankaya', zip: '06640', areaCode: '312', streets: ['Karanfil Sokak'] },
+        ],
+      },
+      {
+        code: '35',
+        name: 'İzmir',
+        locations: [
+          { city: 'İzmir', county: 'Konak', zip: '35210', areaCode: '232', streets: ['Dokuz Eylül Meydanı'] },
+        ],
+      },
+    ],
+  },
+  {
     code: 'JP',
     name: '日本',
     nameEn: 'Japan',
@@ -466,7 +498,7 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
     const loc = region.locations[Math.floor(Math.random() * region.locations.length)];
     const streetName = loc.streets[Math.floor(Math.random() * loc.streets.length)];
     const streetNum = Math.floor(Math.random() * 800) + 10;
-    const street = `${streetNum} ${streetName}`;
+    const street = currentCountry.code === 'TR' ? `${streetName} No: ${streetNum}` : `${streetNum} ${streetName}`;
 
     // Name
     let fullName = '';
@@ -484,6 +516,10 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
       const hkSurnames = ['Chan', 'Lee', 'Wong', 'Cheung', 'Lau', 'Lam', 'Ng'];
       const hkGiv = isMale ? ['Ka-Ho', 'Chun-Kit', 'Kin-Hang', 'Wing-Chun'] : ['Wing-Yan', 'Tsz-Ching', 'Ka-Yan', 'Hoi-Ting'];
       fullName = `${hkSurnames[Math.floor(Math.random() * hkSurnames.length)]} ${hkGiv[Math.floor(Math.random() * hkGiv.length)]}`;
+    } else if (currentCountry.code === 'TR') {
+      const surnames = ['Yılmaz', 'Kaya', 'Demir', 'Çelik', 'Şahin', 'Yıldız', 'Yıldırım', 'Öztürk'];
+      const givenNames = isMale ? ['Mehmet', 'Mustafa', 'Ahmet', 'Emre', 'Can', 'Murat'] : ['Ayşe', 'Fatma', 'Zeynep', 'Elif', 'Defne', 'Ece'];
+      fullName = `${givenNames[Math.floor(Math.random() * givenNames.length)]} ${surnames[Math.floor(Math.random() * surnames.length)]}`;
     } else {
       const fName = isMale ? FIRST_NAMES_M[Math.floor(Math.random() * FIRST_NAMES_M.length)] : FIRST_NAMES_F[Math.floor(Math.random() * FIRST_NAMES_F.length)];
       const lName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
@@ -508,6 +544,9 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
       phone = `+65 ${Math.floor(Math.random() * 30000000 + 60000000)}`;
     } else if (currentCountry.code === 'JP') {
       phone = `${loc.areaCode}-${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    } else if (currentCountry.code === 'TR') {
+      const subscriber = Math.floor(Math.random() * 8000000 + 2000000).toString();
+      phone = `+90 ${loc.areaCode} ${subscriber.slice(0, 3)} ${subscriber.slice(3, 5)} ${subscriber.slice(5)}`;
     } else {
       phone = `+${loc.areaCode} ${Math.floor(Math.random() * 80000000 + 10000000)}`;
     }
@@ -534,6 +573,8 @@ export const IdentityTool: React.FC<IdentityToolProps> = ({ onNavigateToTempMail
       ssn = `S${num}A`;
     } else if (currentCountry.code === 'JP') {
       ssn = `${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    } else if (currentCountry.code === 'TR') {
+      ssn = Math.floor(Math.random() * 90000000000 + 10000000000).toString();
     } else {
       ssn = `${Math.floor(Math.random() * 90000000 + 10000000)}`;
     }
